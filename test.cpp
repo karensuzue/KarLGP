@@ -38,11 +38,11 @@ int main() {
 
     std::cout << "Mutated program 1:" << std::endl;
     SimpleMutate mutator(0.4);
-    mutator.Apply(program);
-    std::cout << program;
+    Program mutated_prog1 {mutator.Apply(program)};
+    std::cout << mutated_prog1;
 
     std::vector<double> xs;
-    for (int i = 0; i < 50; ++i) {
+    for (int i {0}; i < 50; ++i) {
         xs.push_back(i * (2 * M_PI / 49)); // from 0 to 2π
     }
     MSE evaluator(static_cast<double(*)(double)>(std::sin), xs);

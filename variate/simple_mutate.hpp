@@ -17,12 +17,14 @@ private:
     std::mt19937 mutable rng;
 public:
     SimpleMutate(double rate) : mutation_rate(rate), rng(SEED) { }
+
+    VariatorType Type() const override { return VariatorType::UNARY; }
     
-    void Apply(Program & prog) const override {
+    Program Apply(Program const & prog) const override {
         std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
         std::uniform_int_distribution<size_t> reg_dist(0, REGISTER_COUNT - 1);
 
-        std::vector<Instruction> & instructions = prog.GetInstructions();
+        std::vector<Instruction> instructions = prog.GetInstructions();
 
         for (Instruction & instr : instructions) {
             if (prob_dist(rng) < mutation_rate) instr.op = GLOBAL_OPERATORS.GetRandomOpID();
@@ -49,9 +51,14 @@ public:
             }
         }
 
-        // prog.SetInstructions(instructions);
+        Program child;
+        child.SetInstructions(instructions);
+        child.ResetFitness();
+        child.ResetRegisters();
+        return child;
 
     }
+    
     Program Apply(Program const & p1, Program const & p2) const override {
         throw std::runtime_error("SimpleMutate is not a crossover operator.");
     }

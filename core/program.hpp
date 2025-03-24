@@ -33,8 +33,8 @@ struct Instruction {
 
 class Program {
 private:
-    int register_count;
-    int program_length;
+    size_t register_count;
+    size_t program_length;
     double rk_prob {0.3}; // Hard-coded
 
     std::vector<double> registers; // Holds register values (ONLY DOUBLE FOR NOW)
@@ -56,10 +56,9 @@ public:
         register_types[1] = RegisterType::READ_ONLY;
 
         InitProgram();
-        // EvalProgram();
     }
 
-    Program(int rg_count, int prog_len) 
+    Program(size_t rg_count, size_t prog_len) 
     : register_count(rg_count), program_length(prog_len), rng(SEED) {
         registers = std::vector<double>(register_count, 0);
         register_types = std::vector<RegisterType>(register_count, RegisterType::NORMAL);

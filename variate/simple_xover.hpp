@@ -17,8 +17,10 @@ private:
     std::mt19937 mutable rng;
 public:
     SimpleCrossover(double rate) : xover_rate(rate), rng(SEED) { }
+
+    VariatorType Type() const override { return VariatorType::BINARY; }
     
-    void Apply(Program & prog) const override {
+    Program Apply(Program const & prog) const override {
         throw std::runtime_error("SimpleCrossover is not a mutation operator.");
     }
 
@@ -34,7 +36,7 @@ public:
 
         std::vector<Instruction> child_instr;
 
-        for (int i {0}; i < static_cast<int>(instr1.size()); ++i) {
+        for (size_t i {0}; i < instr1.size(); ++i) {
             Instruction const & a {instr1[i]};
             Instruction const & b {instr2[i]};
             
@@ -47,7 +49,7 @@ public:
             child_instr.push_back(temp);
         }
 
-        Program child = p1;
+        Program child;
         child.SetInstructions(child_instr);
         child.ResetFitness();
         child.ResetRegisters();
