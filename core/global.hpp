@@ -21,6 +21,7 @@ int inline PROGRAM_LENGTH = 4;
 #include "../evaluate/mse_eval.hpp"
 
 #include "../variate/simple_mutate.hpp"
+#include "../variate/simple_xover.hpp"
 
 
 #endif

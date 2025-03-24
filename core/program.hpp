@@ -6,6 +6,7 @@
 #include <variant>
 #include <random>
 #include <tuple>
+#include <optional>
 
 enum class RkType {
     REGISTER,
@@ -41,7 +42,7 @@ private:
 
     std::vector<Instruction> instructions; // Program instructions
 
-    double fitness {9999};
+    std::optional<double> fitness;
     
     std::mt19937 rng; // Random number generator
 
@@ -68,12 +69,18 @@ public:
         register_types[1] = RegisterType::READ_ONLY;
 
         InitProgram();
-        // EvalProgram();
     }
 
-    double GetFitness() const { return fitness; }
+    bool IsEvaluated() const { return fitness.has_value(); }
+    double GetFitness() const { 
+        if (!fitness) throw std::runtime_error("Fitness has not been evaluated.");
+        return fitness.value(); 
+    }
     void SetFitness(double val) { fitness = val; }
-    std::vector<Instruction> GetInstructions() const { return instructions; }
+    void ResetFitness() { fitness.reset(); }
+
+    std::vector<Instruction> & GetInstructions() { return instructions; } // for mutation
+    std::vector<Instruction> const & GetInstructions() const { return instructions; }
     void SetInstructions(std::vector<Instruction> & in) { instructions = in; }
 
     void InitProgram() {

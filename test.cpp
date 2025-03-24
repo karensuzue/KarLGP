@@ -27,7 +27,8 @@ int main() {
     // std::cout << "Random global operator: " << name2 << std::endl;
     // std::cout << "Result of 1 and 4: " << func2(1, 4) << std::endl;
     // std::cout << GLOBAL_OPERATORS;
-
+    
+    std::cout << "Program 1:" << std::endl;
     Program program;
     std::cout << program;
     
@@ -35,6 +36,10 @@ int main() {
     double output = program.ExecuteProgram();
     std::cout << output << std::endl;
 
+    std::cout << "Mutated program 1:" << std::endl;
+    SimpleMutate mutator(0.4);
+    mutator.Apply(program);
+    std::cout << program;
 
     std::vector<double> xs;
     for (int i = 0; i < 50; ++i) {
@@ -44,9 +49,15 @@ int main() {
     program.SetFitness(evaluator.Evaluate(program));
     std::cout << "Program Fitness: " << program.GetFitness() << std::endl;
 
-    SimpleMutate mutator(0.1);
-    mutator.Apply(program);
-    std::cout << program;
+    std::cout << "Program 2:" << std::endl;
+    Program program2;
+    std::cout << program2;
+    SimpleCrossover crossover(0.4);
+
+    std::cout << "Child program:" << std::endl;
+    Program child {crossover.Apply(program, program2)};
+    std::cout << child;
+    if (child.IsEvaluated()) {std::cout << "Child program Fitness: " << child.GetFitness() << std::endl;}
 
     return 0;
 }

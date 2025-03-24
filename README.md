@@ -10,3 +10,5 @@ classes with 'base' are meant to be inherited and extended
 
 TODOs:
 - Actually implement read-only register (for input). Right now i'm just labeling them 
+- support for unequal length programs?
+- output is register 0, input is register 1. realistically, program length shouldn't be less than 2, but i should implement safeguards

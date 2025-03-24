@@ -22,7 +22,7 @@ public:
         std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
         std::uniform_int_distribution<size_t> reg_dist(0, REGISTER_COUNT - 1);
 
-        std::vector<Instruction> instructions = prog.GetInstructions();
+        std::vector<Instruction> & instructions = prog.GetInstructions();
 
         for (Instruction & instr : instructions) {
             if (prob_dist(rng) < mutation_rate) instr.op = GLOBAL_OPERATORS.GetRandomOpID();
@@ -49,7 +49,7 @@ public:
             }
         }
 
-        prog.SetInstructions(instructions);
+        // prog.SetInstructions(instructions);
 
     }
     Program Apply(Program const & p1, Program const & p2) const override {
