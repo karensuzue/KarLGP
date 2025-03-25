@@ -1,37 +1,14 @@
-#ifndef PROGRAM_HPP
-#define PROGRAM_HPP
+#ifndef ARITH_PROG_HPP
+#define ARITH_PROG_HPP
 
 #include <vector>
-#include <string>
 #include <variant>
 #include <random>
-#include <tuple>
 #include <optional>
 
-enum class RkType {
-    REGISTER,
-    CONSTANT
-};
+#include "base_prog.hpp"
 
-enum class RegisterType {
-   NORMAL,
-   READ_ONLY 
-};
-
-struct Instruction {
-    // Instructions are representd as r[i] = r[j] op r[k]
-    // Operators are determined using strings
-    // Two possibilities for r[k] - register or constant.
-    // Because we're using numbers to represent registers, we need a way to differentiate
-    // Use a flag to differentiate between constant values and register ID
-        // ('reg', 2): Register 2
-        // ('const', 2): Constant 
-    size_t Ri, Rj; // Index of registers
-    std::pair<RkType, std::variant<size_t, double>> Rk; // 'size_t' for index, 'double' for constant
-    size_t op; // Index of operator in global operators set
-};
-
-class Program {
+class ArithmeticProgram : public Program {
 private:
     size_t register_count;
     size_t program_length;
@@ -47,7 +24,7 @@ private:
     std::mt19937 rng; // Random number generator
 
 public:
-    Program() : register_count(REGISTER_COUNT), program_length(PROGRAM_LENGTH), rng(SEED) { 
+    ArithmeticProgram() : register_count(REGISTER_COUNT), program_length(PROGRAM_LENGTH), rng(SEED) { 
         registers = std::vector<double>(register_count, 0);
         register_types = std::vector<RegisterType>(register_count, RegisterType::NORMAL);
 
@@ -58,7 +35,7 @@ public:
         InitProgram();
     }
 
-    Program(size_t rg_count, size_t prog_len) 
+    ArithmeticProgram(size_t rg_count, size_t prog_len) 
     : register_count(rg_count), program_length(prog_len), rng(SEED) {
         registers = std::vector<double>(register_count, 0);
         register_types = std::vector<RegisterType>(register_count, RegisterType::NORMAL);
@@ -70,19 +47,23 @@ public:
         InitProgram();
     }
 
+    std::unique_ptr<Program> Clone() const override {
+        return std::make_unique<ArithmeticProgram>(*this);
+    }
+
     bool IsEvaluated() const { return fitness.has_value(); }
-    double GetFitness() const { 
+    double GetFitness() const override { 
         if (!fitness) throw std::runtime_error("Fitness has not been evaluated.");
         return fitness.value(); 
     }
-    void SetFitness(double val) { fitness = val; }
-    void ResetFitness() { fitness.reset(); }
+    void SetFitness(double val) override { fitness = val; }
+    void ResetFitness() override { fitness.reset(); }
 
-    std::vector<Instruction> & GetInstructions() { return instructions; } // for mutation
-    std::vector<Instruction> const & GetInstructions() const { return instructions; }
-    void SetInstructions(std::vector<Instruction> & in) { instructions = in; }
+    // std::vector<Instruction> & GetInstructions() { return instructions; } // for mutation
+    std::vector<Instruction> GetInstructions() const override { return instructions; }
+    void SetInstructions(std::vector<Instruction> const & in) override { instructions = in; }
 
-    void InitProgram() {
+    void InitProgram() override {
         instructions = std::vector<Instruction>(program_length);
 
         std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
@@ -115,11 +96,11 @@ public:
         }
     }
 
-    void Input(double in) {
+    void Input(double in) override {
         registers[1] = in;
     }
 
-    double GetOutput() {
+    double GetOutput() const override {
         return registers[0];
     }
 
@@ -136,20 +117,20 @@ public:
         registers[instr.Ri] = op_func(registers[instr.Rj], Rk_value);
     }
 
-    double ExecuteProgram() {
+    double ExecuteProgram() override {
         for (Instruction const & instr : instructions) {
             ExecuteInstruction(instr);
         }
         return registers[0]; // output register
     }
 
-    void ResetRegisters() {
+    void ResetRegisters() override {
         for (double & reg : registers) {
             reg = 0.0;
         }
     }
 
-    void PrintProgram(std::ostream & os) const {
+    void PrintProgram(std::ostream & os) const override {
         for (Instruction const & instr : instructions) {
             os << "r[" << instr.Ri << "] = r[" << instr.Rj << "] " << 
                 GLOBAL_OPERATORS.GetOperatorName(instr.op) << " ";
@@ -159,13 +140,7 @@ public:
             else if (instr.Rk.first == RkType::CONSTANT) {
                 os << std::get<double>(instr.Rk.second) << "\n";
             }
-            os << "\n";
         }
-    }
-
-    friend std::ostream & operator<<(std::ostream & os, Program const & prog) {
-        prog.PrintProgram(os);
-        return os;
     }
 };
 

@@ -8,6 +8,7 @@ Swap each part of instruction with equal probability
 
 #include <random>
 #include <vector>
+#include <memory>
 
 #include "../core/base_vari.hpp"
 
@@ -20,11 +21,12 @@ public:
 
     VariatorType Type() const override { return VariatorType::BINARY; }
     
-    Program Apply(Program const & prog) const override {
+    std::unique_ptr<Program> Apply(Program const & prog) const override {
         throw std::runtime_error("SimpleCrossover is not a mutation operator.");
     }
 
-    Program Apply(Program const & p1, Program const & p2) const override {
+    std::unique_ptr<Program> Apply(Program const & p1, Program const & p2) const override {
+        // we'll just assume p1 and p2 have the same derived class...
         std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
 
         std::vector<Instruction> instr1 = p1.GetInstructions();
@@ -49,10 +51,10 @@ public:
             child_instr.push_back(temp);
         }
 
-        Program child;
-        child.SetInstructions(child_instr);
-        child.ResetFitness();
-        child.ResetRegisters();
+        std::unique_ptr<Program> child {p1.Clone()};
+        child->SetInstructions(child_instr);
+        child->ResetFitness();
+        child->ResetRegisters();
         return child;
     }
 };

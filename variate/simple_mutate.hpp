@@ -8,6 +8,7 @@ Mutate each part of instruction with equal probability
 
 #include <random>
 #include <vector>
+#include <memory>
 
 #include "../core/base_vari.hpp"
 
@@ -20,7 +21,7 @@ public:
 
     VariatorType Type() const override { return VariatorType::UNARY; }
     
-    Program Apply(Program const & prog) const override {
+    std::unique_ptr<Program> Apply(Program const & prog) const override {
         std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
         std::uniform_int_distribution<size_t> reg_dist(0, REGISTER_COUNT - 1);
 
@@ -51,15 +52,16 @@ public:
             }
         }
 
-        Program child;
-        child.SetInstructions(instructions);
-        child.ResetFitness();
-        child.ResetRegisters();
+        // Clone() to make sure 'child' has same derived class as 'prog'
+        std::unique_ptr<Program> child {prog.Clone()}; 
+        child->SetInstructions(instructions);
+        child->ResetFitness();
+        child->ResetRegisters();
         return child;
 
     }
     
-    Program Apply(Program const & p1, Program const & p2) const override {
+    std::unique_ptr<Program> Apply(Program const & p1, Program const & p2) const override {
         throw std::runtime_error("SimpleMutate is not a crossover operator.");
     }
 };

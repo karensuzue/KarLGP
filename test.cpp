@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cmath>
-#include "core/global.hpp"
+#include <memory>
+
+#include "core/default_global.hpp"
 
 int main() {
 
@@ -29,7 +31,7 @@ int main() {
     // std::cout << GLOBAL_OPERATORS;
     
     std::cout << "Program 1:" << std::endl;
-    Program program;
+    ArithmeticProgram program;
     std::cout << program;
     
     program.Input(5);
@@ -38,8 +40,8 @@ int main() {
 
     std::cout << "Mutated program 1:" << std::endl;
     SimpleMutate mutator(0.4);
-    Program mutated_prog1 {mutator.Apply(program)};
-    std::cout << mutated_prog1;
+    std::unique_ptr<Program> mutated_prog1 {mutator.Apply(program)};
+    std::cout << *mutated_prog1;
 
     std::vector<double> xs;
     for (int i {0}; i < 50; ++i) {
@@ -50,14 +52,14 @@ int main() {
     std::cout << "Program Fitness: " << program.GetFitness() << std::endl;
 
     std::cout << "Program 2:" << std::endl;
-    Program program2;
+    ArithmeticProgram program2;
     std::cout << program2;
     SimpleCrossover crossover(0.4);
 
     std::cout << "Child program:" << std::endl;
-    Program child {crossover.Apply(program, program2)};
-    std::cout << child;
-    if (child.IsEvaluated()) {std::cout << "Child program Fitness: " << child.GetFitness() << std::endl;}
+    std::unique_ptr<Program> child {crossover.Apply(program, program2)};
+    std::cout << *child;
+    if (child->IsEvaluated()) {std::cout << "Child program Fitness: " << child->GetFitness() << std::endl;}
 
     return 0;
 }
