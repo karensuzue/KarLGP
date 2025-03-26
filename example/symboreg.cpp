@@ -1,3 +1,7 @@
+/*
+ * Symbolic Regression of sin(x). 
+*/
+
 #include <iostream>
 #include <cmath>
 #include <memory>
@@ -9,7 +13,7 @@ double target_function(double x) {
 }
 
 int main() {
-    // Register constants
+    // Register constants (arbitrary)
     GLOBAL_CONSTANTS.RegisterConstant(42);
     GLOBAL_CONSTANTS.RegisterConstant(-7);
     GLOBAL_CONSTANTS.RegisterConstant(3.14);
@@ -21,17 +25,16 @@ int main() {
 
     // Create test inputs (50 evenly-spaced values from 0 to 2π)
     std::vector<double> inputs;
-    for (int i = 0; i < 50; ++i) {
+    for (int i {0}; i < 50; ++i) {
         inputs.push_back(i * (2 * M_PI / 49));
     }
 
     // Define target function 
     // std::function<double(double)> target_func {static_cast<double(*)(double)>(std::sin)};
-    // OR
-    std::function<double(double)> target_func {target_function};
+    // OR define it outside main
 
     // Declare evaluation method
-    std::unique_ptr<Evaluator> evaluator {std::make_unique<MSE>(target_func, inputs, true)};
+    std::unique_ptr<Evaluator> evaluator {std::make_unique<MSE>(target_function, inputs, true)};
 
     // Declare variation method(s)
     // Variation methods are applied in order

@@ -1,29 +1,22 @@
-'core': Base classes? User can extend to define their own 
-'estimator.hpp': Big encapsulating class. Goal: estimate target program. Calls all the other classes and performs the evolutionary run, similar to PyghGP. you set the seed here.
-
-'global.hpp' holds global parameter values 
-All test files has to include 'core/global.hpp', but nothing else
-None of the other program.hpp files have to include global.hpp, wouldnt work anyway cause circular dependency
-
-classes with 'base' are meant to be inherited and extended 
+# To do list
 
 
-TODOs:
-- global parameters in a single .hpp file may not be the best strategy
-- Actually implement read-only register (for input). Right now i'm just labeling them 
-- support for unequal length programs?
-- output is register 0, input is register 1. realistically, program length shouldn't be less than 2, but i should implement safeguards
-- support for methods that require multiple fitness values, like lexicase selection
-- Crossover and mutation are currently combined under one Variator class, so order of application is very important
-    - allows for flexibility? but maybe not entirely necessary 
-- verbose only keeps track of best fitness
-- currently purely generational
-- currently fixed pop size
-- eval modules are kinda connected to the "env" concept
-- for separate experiments, make a new "global.hpp" file to specify your parameters. probably not the best way to store these things though
-- save/load runs
-- save/load programs
-- currently purely register based represdentation
-- currently clamping to 1e6 and -1e6 to avoid under/overflow in fitness calculations and registers. what's a better way??
-
-MAZE NAVIGATION PROBLEM:
+- Storing global parameters in a single .hpp file may not be the best strategy
+- Actually implement read-only registers (for input). Right now I'm just labeling them
+- Add support for unequal-length programs?
+- By default, output is currently register 0, input is register 1. Realistically, program length shouldn't be less than 2, but I should implement safeguards
+- Support methods that require multiple fitness values (e.g., lexicase selection)
+- Crossover and mutation are currently combined under a single Variator class. In experiment files, the order in which they are added determines the order in which they are applied. 
+- Support for crossover that produces more than one child?
+- Right now the entire population is replaced/gen, not very flexible and may be too extreme. 
+- ~~Verbose mode currently only tracks the best fitness~~
+- Evolution is currently purely generational
+- Population size is currently fixed
+- For separate experiments, I'm creating new config files to specify parameters. Probably not the best long-term solution.
+- Implement save/load functionality for runs
+- Implement save/load functionality for individual programs
+- Representation is currently purely register-based
+- Is there a better approach to clamping in fitness calculations and registers?
+- Support for random ephemeral constants
+- Support for instructions involving 2 constants
+- Add Boolean logic/control flow instructions

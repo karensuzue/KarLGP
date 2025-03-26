@@ -92,7 +92,7 @@ public:
 
             if (verbose && gen % 10 == 0) {
                 os << "First 5 fitnesses: ";
-                for (int i = 0; i < 5; ++i) os << population[i]->GetFitness() << " ";
+                for (int i {0}; i < 5; ++i) os << population[i]->GetFitness() << " ";
                 os << "\n";
             }
 

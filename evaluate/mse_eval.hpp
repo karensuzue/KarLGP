@@ -23,7 +23,10 @@ public:
         prog.ResetRegisters();
         prog.Input(x);
         double output {prog.ExecuteProgram()};
-        return use_tanh ? std::clamp(std::tanh(output), -1e6, 1e6) : output;
+        output = use_tanh ? std::tanh(output) : output;
+        // NaN still passes through std::clamp as NaN
+        // Penalty for overflow (similar to PyshGP)
+        return std::isfinite(output) ? std::clamp(output, -1e6, 1e6) : 1e6;
     }
     double Evaluate(Program & prog) const override {
         if (test_inputs.empty()) throw std::runtime_error("No test inputs available.");
@@ -38,9 +41,8 @@ public:
             //     return 1e6;
             // }
             // double diff {pred - targ};
-            if (!std::isfinite(pred)) return 1e6;
-
-            error_sum += std::clamp(std::pow(pred-targ, 2), -1e6, 1e6);
+            
+            error_sum += std::pow(pred-targ, 2);
         }
         return error_sum / test_inputs.size();
     }
