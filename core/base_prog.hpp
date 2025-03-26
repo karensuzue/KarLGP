@@ -11,6 +11,7 @@ public:
 
     // Necessary for polymorphism
     virtual std::unique_ptr<Program> Clone() const = 0;
+    virtual std::unique_ptr<Program> New() const = 0;
 
     virtual void InitProgram() = 0;
     virtual double ExecuteProgram() = 0;

@@ -24,5 +24,6 @@ TODOs:
 - save/load runs
 - save/load programs
 - currently purely register based represdentation
+- currently clamping to 1e6 and -1e6 to avoid under/overflow in fitness calculations and registers. what's a better way??
 
 MAZE NAVIGATION PROBLEM:

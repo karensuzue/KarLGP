@@ -9,22 +9,22 @@
 // int inline SEED = 0;
 std::random_device rd;
 int inline SEED = rd();
-size_t inline REGISTER_COUNT = 10;
+size_t inline REGISTER_COUNT = 4;
 size_t inline PROGRAM_LENGTH = 10;
-size_t inline POP_SIZE = 100;
-size_t inline GENS = 10;
-size_t inline TOUR_SIZE = 4;
+size_t inline POP_SIZE = 1000;
+size_t inline GENS = 100;
+size_t inline TOUR_SIZE = 40;
+size_t inline XOVER_RATE = 0.1;
+size_t inline MUT_RATE = 0.1;
 
 
-// ----DON'T TOUCH----
+// ----MUST INCLUDE----
 
 #include "constants.hpp"
 Constants inline GLOBAL_CONSTANTS; // Global constant set (shared across programs)
 
 #include "operators.hpp"
 Operators inline GLOBAL_OPERATORS; 
-
-// #include "estimator.hpp"
 
 
 // ----REGISTER MODULES----
@@ -38,5 +38,9 @@ Operators inline GLOBAL_OPERATORS;
 
 #include "../select/tour_select.hpp"
 
+
+// ----MUST INCLUDE----
+
+#include "estimator.hpp"
 
 #endif

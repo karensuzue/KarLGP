@@ -5,6 +5,7 @@
 #include <variant>
 #include <random>
 #include <optional>
+#include <algorithm>
 
 #include "base_prog.hpp"
 
@@ -51,6 +52,12 @@ public:
         return std::make_unique<ArithmeticProgram>(*this);
     }
 
+    std::unique_ptr<Program> New() const override {
+        std::unique_ptr<Program> p {std::make_unique<ArithmeticProgram>()};
+        p->InitProgram(); // just in case
+        return p;
+    }
+
     bool IsEvaluated() const { return fitness.has_value(); }
     double GetFitness() const override { 
         if (!fitness) throw std::runtime_error("Fitness has not been evaluated.");
@@ -59,11 +66,12 @@ public:
     void SetFitness(double val) override { fitness = val; }
     void ResetFitness() override { fitness.reset(); }
 
-    // std::vector<Instruction> & GetInstructions() { return instructions; } // for mutation
+    // std::vector<Instruction> & GetInstructions() { return instructions; } 
     std::vector<Instruction> GetInstructions() const override { return instructions; }
     void SetInstructions(std::vector<Instruction> const & in) override { instructions = in; }
 
     void InitProgram() override {
+        instructions.clear(); // just in case
         instructions = std::vector<Instruction>(program_length);
 
         std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
@@ -105,7 +113,7 @@ public:
     }
 
     void ExecuteInstruction(Instruction const & instr) {
-        // Instructions are representd as r[i] = r[j] op r[k]
+        // Instructions are represented as r[i] = r[j] op r[k]
         auto op_func = GLOBAL_OPERATORS.GetOperator(instr.op);
         double Rk_value;
         if (instr.Rk.first == RkType::CONSTANT) {
@@ -114,14 +122,15 @@ public:
         else if (instr.Rk.first == RkType::REGISTER) {
             Rk_value = registers[std::get<size_t>(instr.Rk.second)];
         }
-        registers[instr.Ri] = op_func(registers[instr.Rj], Rk_value);
+        // Registers are clamped to avoid under/overflow
+        registers[instr.Ri] = std::clamp(op_func(registers[instr.Rj], Rk_value), -1e6, 1e6);
     }
 
     double ExecuteProgram() override {
         for (Instruction const & instr : instructions) {
             ExecuteInstruction(instr);
         }
-        return registers[0]; // output register
+        return std::clamp(registers[0], -1e6, 1e6); // output register
     }
 
     void ResetRegisters() override {
