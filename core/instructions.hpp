@@ -22,7 +22,8 @@ struct Instruction {
         // ('reg', 2): Register 2
         // ('const', 2): Constant 
     size_t Ri, Rj; // Index of registers
-    std::pair<RkType, std::variant<size_t, double>> Rk; // 'size_t' for index, 'double' for constant
+    RkType Rk_type;
+    std::variant<size_t, double> Rk; // 'size_t' for index, 'double' for constant
     size_t op; // Index of operator in global operators set
 };
 

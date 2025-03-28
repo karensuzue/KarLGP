@@ -8,9 +8,8 @@
 
 class MSE: public Evaluator {
 private:
-    std::vector<double> test_inputs;
     std::function<double(double)> target_func;
-
+    std::vector<double> test_inputs;
     bool use_tanh;
 
 public:

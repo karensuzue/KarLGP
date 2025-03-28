@@ -7,7 +7,8 @@
 
 class Estimator {
 private:
-    size_t pop_size, gens;
+    size_t pop_size {POP_SIZE};
+    size_t gens {GENS};
 
     Operators operators;
     Constants constants;
@@ -36,13 +37,12 @@ public:
         std::unique_ptr<Program> prot,
         bool verbose=false,
         std::ostream & os=std::cout)
-        : pop_size(POP_SIZE), gens(GENS),
+      : operators(GLOBAL_OPERATORS),
+        constants(GLOBAL_CONSTANTS),
         evaluator(std::move(eval)), 
         variators(std::move(vars)),
         selector(std::move(sel)),
         prototype(std::move(prot)),
-        operators(GLOBAL_OPERATORS),
-        constants(GLOBAL_CONSTANTS),
         rng(SEED),
         verbose(verbose),
         os(os) {}

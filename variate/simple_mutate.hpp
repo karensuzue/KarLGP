@@ -32,20 +32,22 @@ public:
             if (prob_dist(rng) < mutation_rate) instr.Ri = reg_dist(rng);
             if (prob_dist(rng) < mutation_rate) instr.Rj = reg_dist(rng);
             if (prob_dist(rng) < mutation_rate) {
-                if (instr.Rk.first == RkType::CONSTANT) {
+                if (instr.Rk_type == RkType::CONSTANT) {
                     if (prob_dist(rng) < 0.5 && GLOBAL_CONSTANTS.Size() > 0) {
-                        instr.Rk.second = GLOBAL_CONSTANTS.GetRandomConstant();
+                        instr.Rk = GLOBAL_CONSTANTS.GetRandomConstant();
                     }
                     else {
-                        instr.Rk = {RkType::REGISTER, reg_dist(rng)};
+                        instr.Rk_type = RkType::REGISTER;
+                        instr.Rk = reg_dist(rng);
                     }
                 }
                 else {
                     if (prob_dist(rng) < 0.5) {
-                        instr.Rk.second = reg_dist(rng);
+                        instr.Rk = reg_dist(rng);
                     }
                     else if (GLOBAL_CONSTANTS.Size() > 0) {
-                        instr.Rk = {RkType::CONSTANT, GLOBAL_CONSTANTS.GetRandomConstant()};
+                        instr.Rk_type = RkType::CONSTANT;
+                        instr.Rk = GLOBAL_CONSTANTS.GetRandomConstant();
                     }
 
                 }

@@ -13,7 +13,7 @@ class ArithmeticProgram : public Program {
 private:
     size_t register_count;
     size_t program_length;
-    double rk_prob {0.3}; // Hard-coded
+    double rk_prob {0.3}; // Hard-coded, probability of including constant over register
 
     std::vector<double> registers; // Holds register values (ONLY DOUBLE FOR NOW)
     std::vector<RegisterType> register_types; // Controls register access
@@ -92,14 +92,17 @@ public:
                 //     instr.Rk = {RkType::CONSTANT, GLOBAL_CONSTANTS.GetRandomDecConstant()};
                 // }
                 if (GLOBAL_CONSTANTS.Size() > 0) { 
-                    instr.Rk = {RkType::CONSTANT, GLOBAL_CONSTANTS.GetRandomConstant()};
+                    instr.Rk_type = RkType::CONSTANT;
+                    instr.Rk = GLOBAL_CONSTANTS.GetRandomConstant();
                 }
                 else { // Fall back to REGISTER INDEX if no constants available
-                    instr.Rk = {RkType::REGISTER, reg_dist(rng)};
+                    instr.Rk_type = RkType::REGISTER;
+                    instr.Rk = reg_dist(rng);
                 }
             } 
             else { // REGISTER INDEX
-                instr.Rk = {RkType::REGISTER, reg_dist(rng)};
+                instr.Rk_type = RkType::REGISTER;
+                instr.Rk = reg_dist(rng);
             }
         }
     }
@@ -116,11 +119,11 @@ public:
         // Instructions are represented as r[i] = r[j] op r[k]
         auto op_func = GLOBAL_OPERATORS.GetOperator(instr.op);
         double Rk_value;
-        if (instr.Rk.first == RkType::CONSTANT) {
-            Rk_value = std::get<double>(instr.Rk.second);
+        if (instr.Rk_type== RkType::CONSTANT) {
+            Rk_value = std::get<double>(instr.Rk);
         }
-        else if (instr.Rk.first == RkType::REGISTER) {
-            Rk_value = registers[std::get<size_t>(instr.Rk.second)];
+        else { // if (instr.Rk_type == RkType::REGISTER) {
+            Rk_value = registers[std::get<size_t>(instr.Rk)];
         }
         // Registers are clamped to avoid under/overflow
         registers[instr.Ri] = std::clamp(op_func(registers[instr.Rj], Rk_value), -1e6, 1e6);
@@ -143,11 +146,11 @@ public:
         for (Instruction const & instr : instructions) {
             os << "r[" << instr.Ri << "] = r[" << instr.Rj << "] " << 
                 GLOBAL_OPERATORS.GetOperatorName(instr.op) << " ";
-            if (instr.Rk.first == RkType::REGISTER) {
-                os << "r[" << std::get<size_t>(instr.Rk.second) << "]\n";
+            if (instr.Rk_type == RkType::REGISTER) {
+                os << "r[" << std::get<size_t>(instr.Rk) << "]\n";
             }
-            else if (instr.Rk.first == RkType::CONSTANT) {
-                os << std::get<double>(instr.Rk.second) << "\n";
+            else if (instr.Rk_type == RkType::CONSTANT) {
+                os << std::get<double>(instr.Rk) << "\n";
             }
         }
     }

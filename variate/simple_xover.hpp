@@ -46,7 +46,16 @@ public:
             temp.op = (prob_dist(rng) < xover_rate) ? b.op : a.op;
             temp.Ri = (prob_dist(rng) < xover_rate) ? b.Ri : a.Ri;
             temp.Rj = (prob_dist(rng) < xover_rate) ? b.Rj : a.Rj;
-            temp.Rk = (prob_dist(rng) < xover_rate) ? b.Rk : a.Rk;
+
+            if (prob_dist(rng) < xover_rate) {
+                temp.Rk_type = b.Rk_type;
+                temp.Rk = b.Rk;
+            }
+            else {
+                temp.Rk_type = a.Rk_type;
+                temp.Rk = a.Rk;
+            }
+            // temp.Rk = (prob_dist(rng) < xover_rate) ? b.Rk : a.Rk;
 
             child_instr.push_back(temp);
         }
