@@ -103,6 +103,13 @@ public:
         
     }
 
+    void Reset() {
+        population.clear();
+        best_program.reset();
+        best_fitness_history.clear();
+        avg_fitness_history.clear();
+        median_fitness_history.clear();
+    }
 
     void Evolve() { 
         if (verbose) { PrintRunParam(os); }
@@ -171,7 +178,17 @@ public:
         if (verbose) {
             os << "\nEvolution complete (^_^)!\nOverall Best Fitness: " << best_program->GetFitness() << "\n";
         }
-        ExportFitnessHistory();
+        // ExportFitnessHistory();
+    }
+
+    void MultiRunEvolve(int run_count=10, std::ostream & os=std::cout) {
+        for (int i {0}; i < run_count; ++i) {
+            rng.seed(i);
+            Reset();
+            Evolve();
+            ExportFitnessHistory("fitness_run_" + std::to_string(i) + ".csv");
+            os << "Finished run " << i << "\n";
+        }        
     }
 
     void PrintRunParam(std::ostream & os) const {
@@ -203,7 +220,7 @@ public:
         }
     }
 
-    
+
 };
 
 #endif
