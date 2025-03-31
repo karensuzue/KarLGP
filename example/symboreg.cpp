@@ -50,6 +50,11 @@ int main() {
 
     // Declare estimator 
     Estimator est(std::move(evaluator), std::move(variators), std::move(selector), std::move(prototype), true);
+    
+    // est.InitPopulation();
+    // est.EvalPopulation();
+    // std::cout << est.MedianFitness() << std::endl;
+
     est.Evolve();
     std::cout << est.GetBestProgram();
 

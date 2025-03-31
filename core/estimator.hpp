@@ -4,6 +4,8 @@
 #include <memory>
 #include <random>
 #include <iostream>
+#include <iomanip>
+#include <fstream>
 
 class Estimator {
 private:
@@ -24,6 +26,7 @@ private:
     std::unique_ptr<Program> best_program;
     std::vector<double> best_fitness_history;
     std::vector<double> avg_fitness_history;
+    std::vector<double> median_fitness_history;
 
     std::mt19937 rng;
 
@@ -70,6 +73,36 @@ public:
         return total / population.size();
     }
 
+    double MedianFitness() {
+        // std::vector<std::unique_ptr<Program>> pop_ptr_copy;
+        std::vector<double> fitnesses;
+        for (size_t i {0}; i < pop_size; ++i) {
+            // pop_ptr_copy.push_back(population[i]->Clone());
+            fitnesses.push_back(population[i]->GetFitness());
+        }
+
+        std::sort(fitnesses.begin(), fitnesses.end());
+
+        size_t mid {fitnesses.size() / 2};
+        if (fitnesses.size() % 2 == 0) {
+            return (fitnesses[mid - 1] + fitnesses[mid]) / 2;
+        }
+        else {
+            return fitnesses[mid];
+        }
+        // std::sort(pop_ptr_copy.begin(), pop_ptr_copy.end(), [](auto const & a, auto const & b) {
+        //     return a->GetFitness() < b->GetFitness();
+        // });
+
+        // for (size_t i {0}; i < pop_size; ++i) {
+        //     std::cout << pop_ptr_copy[i]->GetFitness() << ", ";
+        // }
+        // std::cout << std::endl;
+        
+        return 0;
+        
+    }
+
 
     void Evolve() { 
         if (verbose) { PrintRunParam(os); }
@@ -85,10 +118,13 @@ public:
         }
         best_fitness_history.push_back(best_program->GetFitness());
         avg_fitness_history.push_back(AvgFitness());
+        median_fitness_history.push_back(MedianFitness());
         
         // Begin evolutionary loop
         for (size_t gen {0}; gen < gens; ++gen) {
-            if (verbose) { PrintGenSummary(gen, best_fitness_history[gen], avg_fitness_history[0], os); }
+            if (verbose) { 
+                PrintGenSummary(gen, best_fitness_history[gen], avg_fitness_history[gen], median_fitness_history[gen], os); 
+            }
 
             if (verbose && gen % 10 == 0) {
                 os << "First 5 fitnesses: ";
@@ -129,11 +165,13 @@ public:
             }
             best_fitness_history.push_back(best_program->GetFitness());
             avg_fitness_history.push_back(AvgFitness());
+            median_fitness_history.push_back(MedianFitness());
         }
         
         if (verbose) {
             os << "\nEvolution complete (^_^)!\nOverall Best Fitness: " << best_program->GetFitness() << "\n";
         }
+        ExportFitnessHistory();
     }
 
     void PrintRunParam(std::ostream & os) const {
@@ -144,15 +182,28 @@ public:
             << "Program Length: " << PROGRAM_LENGTH << "\n";
     }
 
-    void PrintGenSummary(size_t gen, double b_f, double a_f, std::ostream & os) const {
+    void PrintGenSummary(size_t gen, double b_f, double a_f, double m_f, std::ostream & os) const {
         os << "Generation " << gen << " | Best Fit: " << b_f 
-            << " | Avg Fit: " << a_f << "\n";
+            << " | Avg Fit: " << a_f
+            << " | Median Fit: " << m_f << "\n";
     }
 
-    void ExportFitnessHistory() const {
-
-
+    void ExportFitnessHistory(std::string const & filename="fitness_history.csv") const {
+        std::ofstream ofs(filename);
+        if (ofs.is_open()) {
+            ofs << "Generation,BestFitness,MedianFitness,AvgFitness\n";
+            ofs << std::fixed << std::setprecision(6);
+            for (size_t i {0}; i < best_fitness_history.size(); ++i) {
+                ofs << i << "," 
+                    << best_fitness_history[i] << ","
+                    << median_fitness_history[i] << ","
+                    << avg_fitness_history[i] << "\n";
+            }
+            ofs.close();
+        }
     }
+
+    
 };
 
 #endif

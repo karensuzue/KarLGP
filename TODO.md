@@ -1,6 +1,5 @@
 # To do list
 
-
 - Storing global parameters in a single .hpp file may not be the best strategy
 - Actually implement read-only registers (for input). Right now I'm just labeling them
 - Add support for unequal-length programs?
@@ -22,10 +21,6 @@
 - Add Boolean logic/control flow instructions
 - A way to demonstrate the program in execution so that the users would not have to do analysis themselves
 - Better printing for unary operators
-
-
-
-
 - Median more meaningful than avg if fitness not normally distributed
 - Geometric mean: exponential skew, take log of all vals find mean of that then re exponentiate (make sure same base as when log)
 - NUMBER 1: Start your program with a perfect solution, make sure it does not evolve away (if it does, error in system :/)

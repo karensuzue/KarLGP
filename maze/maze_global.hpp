@@ -3,31 +3,36 @@
 
 #include <random>
 
-// ----MODIFY PARAMETERS----
+#include <random>
+
+// ----PARAMETERS (DON'T MODIFY NAMES)----
+
 // Global seed 
-// int inline SEED = 0;
+// constexpr int SEED = 0;
 std::random_device rd;
-int inline SEED = rd();
-size_t inline REGISTER_COUNT = 4;
-size_t inline PROGRAM_LENGTH = 4;
-size_t inline POP_SIZE = 100;
-size_t inline GENS = 10;
-size_t inline TOUR_SIZE = 4;
+int SEED = rd();
+constexpr size_t REGISTER_COUNT = 4;
+constexpr size_t PROGRAM_LENGTH = 10;
+constexpr size_t POP_SIZE = 1000;
+constexpr size_t GENS = 500;
+constexpr size_t TOUR_SIZE = 40;
+constexpr double XOVER_RATE = 0.1;
+constexpr double MUT_RATE = 0.1;
 
 
-// ----DON'T TOUCH----
+// ----MUST INCLUDE----
+
 #include "constants.hpp"
-Constants inline GLOBAL_CONSTANTS; // Global constant set (shared across programs)
+Constants GLOBAL_CONSTANTS; // Global constant set (shared across programs)
 
 #include "operators.hpp"
-Operators inline GLOBAL_OPERATORS; 
-
-#include "program.hpp"
-
-#include "estimator.hpp"
+Operators GLOBAL_OPERATORS; 
 
 
 // ----REGISTER MODULES----
+
+#include "arith_prog.hpp"
+
 #include "../evaluate/mse_eval.hpp"
 
 #include "../variate/simple_mutate.hpp"
@@ -35,5 +40,9 @@ Operators inline GLOBAL_OPERATORS;
 
 #include "../select/tour_select.hpp"
 
+
+// ----MUST INCLUDE----
+
+#include "estimator.hpp"
 
 #endif
