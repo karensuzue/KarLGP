@@ -49,13 +49,14 @@ int main() {
     std::unique_ptr<Program> prototype {std::make_unique<ArithmeticProgram>()};
 
     // Declare estimator 
-    Estimator est(std::move(evaluator), std::move(variators), std::move(selector), std::move(prototype), true);
+    Estimator est(std::move(evaluator), std::move(variators), std::move(selector), std::move(prototype), false);
     
     // est.InitPopulation();
     // est.EvalPopulation();
     // std::cout << est.MedianFitness() << std::endl;
 
-    est.Evolve();
-    std::cout << est.GetBestProgram();
+    // est.Evolve();
+    // std::cout << est.GetBestProgram();
+    est.MultiRunEvolve();
 
 }
