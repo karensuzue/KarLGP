@@ -22,27 +22,29 @@ constexpr double MUT_RATE = 0.1;
 
 // ----MUST INCLUDE----
 
-#include "constants.hpp"
+#include "../core/constants.hpp"
 Constants GLOBAL_CONSTANTS; // Global constant set (shared across programs)
 
-#include "operators.hpp"
+#include "../core/operators.hpp"
 Operators GLOBAL_OPERATORS; 
 
 
 // ----REGISTER MODULES----
 
-#include "arith_prog.hpp"
+// #include "arith_prog.hpp"
 
-#include "../evaluate/mse_eval.hpp"
+// #include "../evaluate/mse_eval.hpp"
 
-#include "../variate/simple_mutate.hpp"
-#include "../variate/simple_xover.hpp"
+// #include "../variate/simple_mutate.hpp"
+// #include "../variate/simple_xover.hpp"
 
-#include "../select/tour_select.hpp"
+// #include "../select/tour_select.hpp"
+
+#include "maze_env.hpp"
 
 
 // ----MUST INCLUDE----
 
-#include "estimator.hpp"
+// #include "../core/estimator.hpp"
 
 #endif
