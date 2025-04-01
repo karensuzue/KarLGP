@@ -21,7 +21,22 @@
 - Add Boolean logic/control flow instructions
 - A way to demonstrate the program in execution so that the users would not have to do analysis themselves
 - Better printing for unary operators
-- Median more meaningful than avg if fitness not normally distributed
+- ~~Median more meaningful than avg if fitness not normally distributed~~
 - Geometric mean: exponential skew, take log of all vals find mean of that then re exponentiate (make sure same base as when log)
 - NUMBER 1: Start your program with a perfect solution, make sure it does not evolve away (if it does, error in system :/)
 - if large scale, maybe dont have global variables
+
+
+## Maze Navigation Domain
+- Implement other kinds of maze generation algorithms
+    - e.g. binary tree
+    - Has to generate perfect mazes, because guarantees there's a path between any two start-goal cells
+    - How to tell which method produces more deceptive mazes?
+    - DFS backtracks, may have a tendency to create paths that circle back towards the middle of the maze?
+        - Or long winding paths
+    - Observation: DFS-generated mazes are very easy when small (<= 7x7)
+    - Binary tree might be a good idea, because to generate paths it always moves down and right
+        - as long as goal aligns with starting point, this usually creates a deceptive maze
+        - Downside is more deterministic/predictable shape
+
+- I wonder if including angle to goal will have a negative effect on evolution
