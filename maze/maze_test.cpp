@@ -4,7 +4,7 @@
 #include <fstream>
 
 int main() {
-    MazeEnvironment maze(9, 9, {1,1}); 
+    MazeEnvironment maze(7, 7, {1,1}); 
     // maze.GenerateMazeDFS();
     // std::cout << maze;
 
@@ -13,6 +13,22 @@ int main() {
 
     std::ofstream ofs("maze.txt");
     if (ofs.is_open()) { ofs << maze; }
+
+    maze.Step(3);
+    maze.Step(3);
+    maze.Step(1);
+    maze.Step(1);
+    std::cout << maze;
+
+    maze.UpdateSensors();
+    std::vector<double> sensors = maze.GetSensors();
+
+    for (double val : sensors) {
+        std::cout << val << ", ";
+    }
+    std::cout << std::endl;
+
+    std::cout << maze.GetDistToGoal() << std::endl;
     
 
 

@@ -5,6 +5,7 @@
 #include <vector>
 #include <stack>
 #include <random>
+#include <cmath>
 
 class MazeEnvironment {
 private:
@@ -12,17 +13,20 @@ private:
     int rows, cols;
     std::pair<int, int> start; // start coordinate
     std::pair<int, int> goal; // goal coordinate
+
     std::pair<int, int> position; // robot position
+    std::vector<double> sensors{5}; // robot sensors
 
     std::mt19937 rng;
 
 public:
     // Start at {1, 1} to leave room for edge walls
     // Make sure rows and cols are odd
-    MazeEnvironment(int r=21, int c=21, std::pair<int,int> start={1,1}) 
+    MazeEnvironment(int r=21, int c=21, std::pair<int, int> start={1,1}) 
     : rows(r), cols(c), start(start), position(start), rng(SEED)
     {
         // GenerateMazeDFS();
+        goal = {rows - 2, 1};
     }
 
     void ImportMaze() {
@@ -59,15 +63,15 @@ public:
             std::vector<std::pair<int,int>> neighbor_coords;
 
             // Look for unvisited neighbors
-            for (auto const & [dx, dy] : directions) {
-                int neighbor_x {current_coord.first + dx};
-                int neighbor_y {current_coord.second + dy};
+            for (auto const & [dr, dc] : directions) {
+                int neighbor_r {current_coord.first + dr};
+                int neighbor_c {current_coord.second + dc};
 
                 // If neighbor is still a wall and is not past the edges of the maze
-                if (neighbor_x > 0 && neighbor_x < rows - 1 &&
-                    neighbor_y > 0 && neighbor_y < cols - 1 &&
-                    grid[neighbor_x][neighbor_y]) {
-                        neighbor_coords.push_back({neighbor_x, neighbor_y});
+                if (neighbor_r > 0 && neighbor_r < rows - 1 &&
+                    neighbor_c > 0 && neighbor_c < cols - 1 &&
+                    grid[neighbor_r][neighbor_c]) {
+                        neighbor_coords.push_back({neighbor_r, neighbor_c});
                     }
             }
 
@@ -78,11 +82,11 @@ public:
                 std::uniform_int_distribution<size_t> dist(0, neighbor_coords.size() - 1);
                 std::pair<int,int> chosen_neighbor {neighbor_coords[dist(rng)]};
 
-                int wall_x {(current_coord.first + chosen_neighbor.first) / 2};
-                int wall_y {(current_coord.second + chosen_neighbor.second) / 2};
+                int wall_r {(current_coord.first + chosen_neighbor.first) / 2};
+                int wall_c {(current_coord.second + chosen_neighbor.second) / 2};
 
                 grid[chosen_neighbor.first][chosen_neighbor.second] = false;
-                grid[wall_x][wall_y] = false;
+                grid[wall_r][wall_c] = false;
 
                 stack.push(chosen_neighbor);
             }
@@ -129,10 +133,10 @@ public:
                     std::pair<int, int> chosen_neighbor {neighbor_coords[dist(rng)]};
 
                     // Carve path
-                    int wall_x {(i + chosen_neighbor.first) / 2};
-                    int wall_y {(j + chosen_neighbor.second) / 2};
+                    int wall_r {(i + chosen_neighbor.first) / 2};
+                    int wall_c {(j + chosen_neighbor.second) / 2};
                     grid[chosen_neighbor.first][chosen_neighbor.second] = false;
-                    grid[wall_x][wall_y] = false;
+                    grid[wall_r][wall_c] = false;
                 }
             }
         }
@@ -140,38 +144,72 @@ public:
     }
 
 
-    // void Reset() {
-    //     position = start;
-    // }
+    void ResetRobotPosition() {
+        position = start;
+    }
 
-    // bool IsWall(std::pair<int, int> coord) const {
-    //     return grid[coord.first][coord.second] == 1;
-    // }
+    void ResetMaze() {
+        grid.clear();
+    }
 
-    // bool CanMove(std::pair<int, int> coord) const {
-    //     int x {coord.first}, y {coord.second};
-    //     return !IsWall(coord) &&
-    //            x >= 0 && x < cols &&
-    //            y >= 0 && y < rows;
-    // }
+    bool IsWall(std::pair<int, int> coord) const {
+        return coord.first >= 0 && coord.first < rows &&
+               coord.second >= 0 && coord.second < cols && 
+               grid[coord.first][coord.second] == 1;
+    }
 
-    // void Step(int action) {
-    //     // robot action
-    //     // 0 = forward, 1 = down, 2 = left, 3 = right 
-    // }
+    bool CanMove(std::pair<int, int> coord) const {
+        // Can move if r and c are not out of bounds, and we're not hitting a wall
+        int r {coord.first}, c {coord.second};
+        return r >= 0 && r < rows &&
+               c >= 0 && c < cols &&
+               !IsWall(coord);
+    }
 
-    // std::vector<double> GetSensors() {
-    //     // front, left, right walls
-    //     // goal angle
-    // } 
+    void Step(int action) {
+        // Robot action indices:
+        // 0 = up, 1 = down, 2 = left, 3 = right 
+        std::vector<std::pair<int, int>> const moves {{
+            {-1, 0}, {1, 0}, {0, -1}, {0, 1}
+        }};
 
-    // double GetDistToGoal() const {
-    //     // for eval module
-    // }
+        auto [dr, dc] {moves[action]};
+        std::pair<int, int> new_pos = {position.first + dr, position.second + dc}; 
+        if (CanMove(new_pos)) position = new_pos;
+    }
 
-    // bool ReachedGoal() const {
-    //     // yuh
-    // }
+    void UpdateSensors() {
+        double up {IsWall({position.first - 1, position.second}) ? 1.0 : 0.0};
+        double down {IsWall({position.first + 1, position.second}) ? 1.0 : 0.0};
+        double left {IsWall({position.first, position.second - 1}) ? 1.0 : 0.0};
+        double right {IsWall({position.first, position.second + 1}) ? 1.0 : 0.0};
+        double angle {GetGoalAngle()};
+        sensors = {up, down, left, right, angle};
+    } 
+
+    std::vector<double> GetSensors() const {
+        return sensors;
+    }
+
+    double GetGoalAngle() const {
+        int dx {goal.second - position.second}; // x is cols
+        int dy {goal.first - position.first}; // y is rows
+
+        double angle {std::atan2(dy, dx)}; // [-pi, pi]
+
+        return angle / M_PI; // [-1, 1]
+    }
+
+    double GetDistToGoal() const {
+        // return std::sqrt(std::pow(goal.second - position.second, 2) + std::pow(goal.first - position.first, 2));
+        int dx {goal.second - position.second};
+        int dy {goal.first - position.first};
+        return std::hypot(dx, dy);
+    }
+
+    bool ReachedGoal() const {
+        return position == goal;
+    }
 
     void PrintMaze(std::ostream & os) const {
         for (int i {0}; i < rows; ++i) {
