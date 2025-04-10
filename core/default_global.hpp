@@ -9,11 +9,11 @@
 // constexpr int SEED = 0;
 std::random_device rd;
 int SEED = rd();
-constexpr size_t REGISTER_COUNT = 4;
-constexpr size_t PROGRAM_LENGTH = 10;
-constexpr size_t POP_SIZE = 1000;
-constexpr size_t GENS = 500;
-constexpr size_t TOUR_SIZE = 40;
+constexpr size_t REGISTER_COUNT = 10;
+constexpr size_t PROGRAM_LENGTH = 50;
+constexpr size_t POP_SIZE = 300;
+constexpr size_t GENS = 1000;
+constexpr size_t TOUR_SIZE = 20;
 constexpr double XOVER_RATE = 0.1;
 constexpr double MUT_RATE = 0.1;
 
@@ -35,6 +35,7 @@ Operators GLOBAL_OPERATORS;
 
 #include "../variate/simple_mutate.hpp"
 #include "../variate/simple_xover.hpp"
+#include "../variate/rand_variator.hpp"
 
 #include "../select/tour_select.hpp"
 

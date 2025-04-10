@@ -11,8 +11,8 @@
 // constexpr int SEED = 0;
 std::random_device rd;
 int SEED = rd();
-constexpr size_t REGISTER_COUNT = 4;
-constexpr size_t PROGRAM_LENGTH = 10;
+constexpr size_t REGISTER_COUNT = 10;
+constexpr size_t PROGRAM_LENGTH = 20;
 constexpr size_t POP_SIZE = 1000;
 constexpr size_t GENS = 500;
 constexpr size_t TOUR_SIZE = 40;
@@ -31,7 +31,7 @@ Operators GLOBAL_OPERATORS;
 
 // ----REGISTER MODULES----
 
-// #include "arith_prog.hpp"
+#include "maze_prog.hpp"
 
 // #include "../evaluate/mse_eval.hpp"
 

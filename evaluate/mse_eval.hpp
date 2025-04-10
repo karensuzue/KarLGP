@@ -18,6 +18,10 @@ public:
         bool tanh=false)
         : target_func(func), test_inputs(inputs), use_tanh(tanh) { }
     
+    std::vector<double> GetInputSet() const override {
+        return test_inputs;
+    }
+
     double Interpret(Program & prog, double x) const {
         prog.ResetRegisters();
         prog.Input(x);
@@ -33,13 +37,6 @@ public:
         for (double x : test_inputs) {
             double pred {Interpret(prog, x)};
             double targ {target_func(x)};
-
-            // if (std::isnan(pred) || std::isinf(pred)) {
-            //     std::cerr << "NaN detected! Input = " << x << "\n";
-            //     prog.PrintProgram(std::cerr);
-            //     return 1e6;
-            // }
-            // double diff {pred - targ};
             
             error_sum += std::pow(pred-targ, 2);
         }

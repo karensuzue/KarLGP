@@ -22,7 +22,7 @@ public:
     VariatorType Type() const override { return VariatorType::BINARY; }
     
     std::unique_ptr<Program> Apply(Program const & prog) const override {
-        throw std::runtime_error("SimpleCrossover is not a mutation operator.");
+        throw std::runtime_error("SimpleCrossover is not a unary operator.");
     }
 
     std::unique_ptr<Program> Apply(Program const & p1, Program const & p2) const override {

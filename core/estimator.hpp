@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <cassert>
 
 class Estimator {
 private:
@@ -15,7 +16,6 @@ private:
     Operators operators;
     Constants constants;
 
-    // C++ requires pointers or references for polymorphism?
     std::unique_ptr<Evaluator> evaluator;
     std::vector<std::unique_ptr<Variator>> variators;
     std::unique_ptr<Selector> selector;
@@ -24,9 +24,17 @@ private:
     std::unique_ptr<Program> prototype; // to grab the right Program subclass
 
     std::unique_ptr<Program> best_program;
-    std::vector<double> best_fitness_history;
+    std::vector<double> best_fitness_history; // NOTE: fitness is currently error, so minimizing
     std::vector<double> avg_fitness_history;
     std::vector<double> median_fitness_history;
+
+    // Effect histories are one element smaller than fitness histories
+    std::vector<double> quality_gain_history; 
+    std::vector<double> success_rate_history;
+
+    std::vector<double> semantic_intron_history;
+    std::vector<double> semantic_intron_elim_history;
+    std::vector<double> structural_intron_history;
 
     std::mt19937 rng;
 
@@ -63,6 +71,35 @@ public:
         for (std::unique_ptr<Program> & p : population) {
             p->SetFitness(evaluator->Evaluate(*p));
         }
+    }
+
+    // // Proportion of structural introns in program code, averaged across the entire population
+    double AvgStructuralIntronProp() {
+        double intron_prop_sum {0};
+        for (std::unique_ptr<Program> & p : population) {
+            intron_prop_sum += p->StructuralIntronProp();
+        }
+        return intron_prop_sum / pop_size;
+    }
+
+    // First method (less accurate?)
+    // Looks for differences in individual registers before and after executing an instruction
+    double AvgSemanticIntronProp() {
+        double intron_prop_sum {0};
+        for (std::unique_ptr<Program> & p : population) {
+            intron_prop_sum += p->SemanticIntronProp(*evaluator);
+        }
+        return intron_prop_sum / pop_size;
+    }
+
+    // Second method (more accurate?)
+    // Eliminates instructions one by one to check which ones affect the final output (or fitness)
+    double AvgSemanticIntronProp_Elimination() {
+        double intron_prop_sum {0};
+        for (std::unique_ptr<Program> & p : population) {
+            intron_prop_sum += p->SemanticIntronProp_Elimination(*evaluator);
+        }
+        return intron_prop_sum / pop_size;
     }
 
     double AvgFitness() {
@@ -106,9 +143,17 @@ public:
     void Reset() {
         population.clear();
         best_program.reset();
+
         best_fitness_history.clear();
         avg_fitness_history.clear();
         median_fitness_history.clear();
+
+        // quality_gain_history.clear();
+        // success_rate_history.clear();
+
+        semantic_intron_history.clear();
+        semantic_intron_elim_history.clear();
+        structural_intron_history.clear();
     }
 
     void Evolve() { 
@@ -126,6 +171,10 @@ public:
         best_fitness_history.push_back(best_program->GetFitness());
         avg_fitness_history.push_back(AvgFitness());
         median_fitness_history.push_back(MedianFitness());
+
+        semantic_intron_history.push_back(AvgSemanticIntronProp());
+        semantic_intron_elim_history.push_back(AvgSemanticIntronProp_Elimination());
+        structural_intron_history.push_back(AvgStructuralIntronProp());
         
         // Begin evolutionary loop
         for (size_t gen {0}; gen < gens; ++gen) {
@@ -140,24 +189,48 @@ public:
             }
 
             std::vector<std::unique_ptr<Program>> new_pop;
+            // int success_count {0}; // For measuring success rate
 
-            // Produce children
+            // Produce children - by default, we replace the entire population
             while (new_pop.size() < pop_size) {
                 Program const & parent1 {selector->Select(population)};
                 Program const & parent2 {selector->Select(population)};
 
                 std::unique_ptr<Program> child {parent1.Clone()}; // Default: copy parent1
+
                 // Not sure if this is a good way
                 // Be careful with ordering of variators in set
                 // If no binary variator exists, we just mutate parent1
+
+                // bool two_parents {false}; // For measuring success rate
                 for (std::unique_ptr<Variator> & variator: variators) {
                     if (variator->Type() == VariatorType::BINARY) {
                         child = variator->Apply(parent1, parent2);
+                        // two_parents = true;
                     }
                     else if (variator->Type() == VariatorType::UNARY) {
                         child = variator->Apply(*child);
                     }
                 }
+
+                // Measuring success rate
+                // double parent1_fitness {parent1.GetFitness()};
+                // double parent2_fitness {parent2.GetFitness()};
+                // double child_fitness {evaluator->Evaluate(*child)};
+
+                // bool success {false};
+                // if (two_parents) { 
+                //     // Better fitness = lower fitness, in this case
+                //     // Not sure if I should switch to using explicit improvement over both parents
+                //     // I assume using "or" is more realistic and captures partial improvements
+                //     success = child_fitness < parent1_fitness || child_fitness < parent2_fitness;
+                // }
+                // else {
+                //     success = child_fitness < parent1_fitness;
+                // }
+                // if (success) ++success_count;
+
+
                 new_pop.push_back(std::move(child));
             }
 
@@ -170,9 +243,23 @@ public:
                     best_program = p->Clone();
                 }
             }
+
             best_fitness_history.push_back(best_program->GetFitness());
-            avg_fitness_history.push_back(AvgFitness());
+
+            // double prev_avg_fitness {avg_fitness_history.back()};
+            double curr_avg_fitness {AvgFitness()};
+            // Inverse, makes more sense for quality gain to increase
+            // double quality_gain {-(curr_avg_fitness - prev_avg_fitness)}; 
+            avg_fitness_history.push_back(curr_avg_fitness);
+            // quality_gain_history.push_back(quality_gain);
+
+            // success_rate_history.push_back(static_cast<double>(success_count) / static_cast<double>(pop_size));
+
             median_fitness_history.push_back(MedianFitness());
+
+            semantic_intron_history.push_back(AvgSemanticIntronProp());
+            semantic_intron_elim_history.push_back(AvgSemanticIntronProp_Elimination());
+            structural_intron_history.push_back(AvgStructuralIntronProp());
         }
         
         if (verbose) {
@@ -182,11 +269,22 @@ public:
     }
 
     void MultiRunEvolve(int run_count=10, std::ostream & os=std::cout) {
+        verbose = false; // just in case
+
         for (int i {0}; i < run_count; ++i) {
             rng.seed(i);
             Reset();
             Evolve();
             ExportFitnessHistory("fitness_run_" + std::to_string(i) + ".csv");
+            // ExportEffectHistory("effect_run_" + std::to_string(i) + ".csv");
+            ExportIntronHistory("intron_run_" + std::to_string(i) + ".csv");
+            
+            std::ofstream ofs("best_program_" + std::to_string(i) + ".txt");
+            if (ofs.is_open()) {
+                ofs << best_program->GetFitness() << "\n";
+                ofs << *best_program;
+            }
+
             os << "Finished run " << i << "\n";
         }        
     }
@@ -206,6 +304,9 @@ public:
     }
 
     void ExportFitnessHistory(std::string const & filename="fitness_history.csv") const {
+        assert(best_fitness_history.size() == avg_fitness_history.size());
+        assert(avg_fitness_history.size() == median_fitness_history.size());
+
         std::ofstream ofs(filename);
         if (ofs.is_open()) {
             ofs << "Generation,BestFitness,MedianFitness,AvgFitness\n";
@@ -220,7 +321,34 @@ public:
         }
     }
 
+    void ExportEffectHistory(std::string const & filename="effect_history.csv") const {
+        assert(quality_gain_history.size() == success_rate_history.size());
+        std::ofstream ofs(filename);
+        if (ofs.is_open()) {
+            ofs << "Generation,QualityGain,SuccessRate\n";
+            ofs << std::fixed << std::setprecision(6);
+            for (size_t i {0}; i < quality_gain_history.size(); ++i) {
+                ofs << i+1 << ","
+                    << quality_gain_history[i] << ","
+                    << success_rate_history[i] << "\n";
+            }
+        }
+    }
 
+    void ExportIntronHistory(std::string const & filename="intron_history.csv") const {
+        assert(semantic_intron_history.size() == structural_intron_history.size());
+        std::ofstream ofs(filename);
+        if (ofs.is_open()) {
+            ofs << "Generation,Semantic,SemanticElim, Structural\n";
+            ofs << std::fixed << std::setprecision(6);
+            for (size_t i {0}; i < semantic_intron_history.size(); ++i) {
+                ofs << i << ","
+                    << semantic_intron_history[i] << ","
+                    << semantic_intron_elim_history[i] << ","
+                    << structural_intron_history[i] << "\n";
+            }
+        }
+    }
 };
 
 #endif

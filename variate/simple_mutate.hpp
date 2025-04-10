@@ -64,7 +64,7 @@ public:
     }
     
     std::unique_ptr<Program> Apply(Program const & p1, Program const & p2) const override {
-        throw std::runtime_error("SimpleMutate is not a crossover operator.");
+        throw std::runtime_error("SimpleMutate is not a binary operator.");
     }
 };
 

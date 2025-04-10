@@ -1,62 +1,50 @@
-/*
- * Symbolic Regression of sin(x). 
-*/
-
 #include <iostream>
 #include <cmath>
 #include <memory>
 
 #include "../core/default_global.hpp"
 
+// Approximate sin(x)
 double target_function(double x) {
     return std::sin(x);
 }
 
 int main() {
-    // Register constants (arbitrary)
     GLOBAL_CONSTANTS.RegisterConstant(-1);
     GLOBAL_CONSTANTS.RegisterConstant(1);
-    GLOBAL_CONSTANTS.RegisterConstant(3.14);
+    GLOBAL_CONSTANTS.RegisterConstant(3.1416);
+    GLOBAL_CONSTANTS.RegisterConstant(6.2832);
     GLOBAL_CONSTANTS.RegisterConstant(2);
+    GLOBAL_CONSTANTS.RegisterConstant(0.5);
+    GLOBAL_CONSTANTS.RegisterConstant(-0.5);
+    GLOBAL_CONSTANTS.RegisterConstant(0);
 
-    // Register operator 
-    GLOBAL_OPERATORS.RegisterUnaryOperator("sin", [](double a){ return std::sin(a); });
-    GLOBAL_OPERATORS.RegisterOperator("exp", [](double a, double b) { return std::pow(a,b); });
-
-    // Create test inputs (50 evenly-spaced values from 0 to 2π)
+    // Create training inputs (50 evenly-spaced values from 0 to 2π)
     std::vector<double> inputs;
     for (int i {0}; i < 50; ++i) {
         inputs.push_back(i * (2 * M_PI / 49));
     }
 
-    // Define target function 
-    // std::function<double(double)> target_func {static_cast<double(*)(double)>(std::sin)};
-    // OR define it outside main
-
-    // Declare evaluation method
     std::unique_ptr<Evaluator> evaluator {std::make_unique<MSE>(target_function, inputs, true)};
 
-    // Declare variation method(s)
-    // Variation methods are applied in order
+    // Comment out the operators you don't need
     std::vector<std::unique_ptr<Variator>> variators;
     variators.push_back(std::make_unique<SimpleCrossover>(XOVER_RATE));
     variators.push_back(std::make_unique<SimpleMutate>(MUT_RATE));
+    // variators.push_back(std::make_unique<RandomVariator>());
 
-    // Declare selection method
     std::unique_ptr<Selector> selector {std::make_unique<TournamentSelect>()};
-
-    // Declare program prototype
+    
     std::unique_ptr<Program> prototype {std::make_unique<ArithmeticProgram>()};
 
-    // Declare estimator 
     Estimator est(std::move(evaluator), std::move(variators), std::move(selector), std::move(prototype), false);
-    
-    // est.InitPopulation();
-    // est.EvalPopulation();
-    // std::cout << est.MedianFitness() << std::endl;
 
-    // est.Evolve();
-    // std::cout << est.GetBestProgram();
     est.MultiRunEvolve();
-
+    // ArithmeticProgram test;
+    // std::cout << test;
+    // std::cout << test.StructuralIntronProp() << std::endl;
+    // std::cout << test.SemanticIntronProp(*evaluator) << std::endl;
+    // std::cout << test.SemanticIntronProp_Elimination(*evaluator) << std::endl;
 }
+
+

@@ -30,6 +30,9 @@ int main() {
 
     std::cout << maze.GetDistToGoal() << std::endl;
     
+    MazeProgram program;
+    std::cout << program;
+
 
 
 }

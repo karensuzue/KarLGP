@@ -2,6 +2,7 @@
 #define MAZE_PROG_HPP
 
 #include <memory>
+#include <optional>
 
 #include "../core/base_prog.hpp"
 
@@ -36,7 +37,7 @@ public:
     }
 
     std::unique_ptr<Program> New() const override {
-        std::unique_ptr<Program> p {std::make_unique<MazeProgram>(){}};
+        std::unique_ptr<Program> p {std::make_unique<MazeProgram>()};
         p->InitProgram();
         return p;
     }
@@ -101,16 +102,25 @@ public:
     }
 
 
-    void Input(std::vector<double> inputs) override {
+    void Input(std::vector<double> inputs) {
         // Registers 0-4 hold sensor inputs
         // Register 5 hold output
-        for (int i {0}; i < inputs.size(); ++i) {
+        for (size_t i {0}; i < inputs.size(); ++i) {
             registers[i] = inputs[i];
         }
     }
 
-    double GetOutput() const override { 
-        return registers[5] % 4; // 4 available actions 
+    void Input(double x) override {
+        throw std::runtime_error("Single input is not an option for MazeProgram.");
+    }
+
+    double GetOutput() const override {
+        return registers[5]; // pure, unaltered
+    }
+
+
+    int GetOutputStep() const { 
+        return static_cast<int>(std::round(registers[5])) % 4; // 4 available actions 
     }
 
     double GetFitness() const override {
