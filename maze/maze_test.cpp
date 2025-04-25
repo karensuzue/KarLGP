@@ -4,35 +4,38 @@
 #include <fstream>
 
 int main() {
-    MazeEnvironment maze(7, 7, {1,1}); 
-    // maze.GenerateMazeDFS();
-    // std::cout << maze;
+    // Create new maze, generate paths, save
+    // MazeEnvironment maze(7, 7, {1,1}, SEED); 
+    // maze.GenerateMazeBinary();
+    // std::ofstream ofs("maze.txt");
+    // if (ofs.is_open()) { ofs << maze; }
 
-    maze.GenerateMazeBinary();
-    std::cout << maze;
 
-    std::ofstream ofs("maze.txt");
-    if (ofs.is_open()) { ofs << maze; }
+    // MazeProgram program;
+    // std::cout << program;
 
-    maze.Step(3);
-    maze.Step(3);
-    maze.Step(1);
-    maze.Step(1);
-    std::cout << maze;
+    // MazeEvaluator evaluator(2000, 11, 7, 7);
+    // // eval.SimulateSingleMaze(program, new_maze);
 
-    maze.UpdateSensors();
-    std::vector<double> sensors = maze.GetSensors();
+    // double fitness {evaluator.Evaluate(program)};
+    // std::cout << "fitness is " << fitness << std::endl;
+    // std::cout << "behavior is " << program.GetBehavior() << std::endl;
 
-    for (double val : sensors) {
-        std::cout << val << ", ";
-    }
-    std::cout << std::endl;
-
-    std::cout << maze.GetDistToGoal() << std::endl;
+    // std::unique_ptr<Evaluator> evaluator {std::make_unique<MazeEvaluator>(100, 11, 21, 21)};
+    std::unique_ptr<Evaluator> evaluator_novel {std::make_unique<MazeNoveltyEvaluator>(100, 11, 21, 21, 10)};
+    // std::unique_ptr<Evaluator> evaluator_surprise {std::make_unique<MazeSurpriseEvaluator>(100, 11, 21, 21)};
     
-    MazeProgram program;
-    std::cout << program;
+    std::vector<std::unique_ptr<Variator>> variators;
+    variators.push_back(std::make_unique<SimpleCrossover>(XOVER_RATE));
+    variators.push_back(std::make_unique<SimpleMutate>(MUT_RATE));
 
+    std::unique_ptr<Selector> selector {std::make_unique<TournamentSelect>()};
+
+    std::unique_ptr<Program> prototype {std::make_unique<MazeProgram>()};
+
+    Estimator est(std::move(evaluator_novel), std::move(variators), std::move(selector), std::move(prototype), true);
+    est.Evolve();
+    std::cout << est.GetBestProgram();
 
 
 }

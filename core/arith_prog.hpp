@@ -1,6 +1,8 @@
 #ifndef ARITH_PROG_HPP
 #define ARITH_PROG_HPP
 
+// ARITHMETIC PROGRAMS CURRENTLY DON'T SUPPORT TERNARY OPERATORS OR NOVELTY
+
 #include <vector>
 #include <variant>
 #include <random>
@@ -147,6 +149,10 @@ public:
         for (double & reg : registers) {
             reg = 0.0;
         }
+    }
+
+    std::vector<double> GetRegisters() const override {
+        return registers;
     }
 
     void PrintProgram(std::ostream & os) const override {

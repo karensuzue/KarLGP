@@ -19,19 +19,34 @@ private:
 
     std::mt19937 rng;
 
+    // Robot action indices (default):
+    // 0 = up, 1 = down, 2 = left, 3 = right 
+    std::vector<std::pair<int, int>> moves;
+
 public:
     // Start at {1, 1} to leave room for edge walls
     // Make sure rows and cols are odd
-    MazeEnvironment(int r=21, int c=21, std::pair<int, int> start={1,1}) 
-    : rows(r), cols(c), start(start), position(start), rng(SEED)
+    MazeEnvironment(int r=21, int c=21, std::pair<int, int> start={1,1}, int seed=SEED) 
+    : rows(r), cols(c), start(start), position(start), rng(seed)
     {
         // GenerateMazeDFS();
-        goal = {rows - 2, 1};
+        // goal = {rows - 2, 1};
+        // GenerateGoal();
+
+        // Initialize moves set
+        moves = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
     }
 
     void ImportMaze() {
         // Import maze from text file
         
+    }
+
+    void GenerateGoal() {
+        // Goal should preferably be towards the bottom half
+        std::uniform_int_distribution<int> row_dist(rows / 2, rows - 2);
+        std::uniform_int_distribution<int> col_dist(1, cols - 2);
+        goal = {row_dist(rng), col_dist(rng)};
     }
 
     void GenerateMazeDFS() {
@@ -96,7 +111,8 @@ public:
             }
         }
 
-        goal = {rows - 2, 1}; // Generally more deceptive if start aligns with goal column-wise
+        // goal = {rows - 2, 1}; // Generally more deceptive if start aligns with goal column-wise
+        GenerateGoal();
     }
 
     void GenerateMazeBinary() {
@@ -140,9 +156,13 @@ public:
                 }
             }
         }
-        goal = {rows - 2, 1};
+        // goal = {rows - 2, 1};
+        GenerateGoal();
     }
 
+    std::pair<int, int> GetRobotPosition() const {
+        return position;
+    }
 
     void ResetRobotPosition() {
         position = start;
@@ -169,15 +189,13 @@ public:
     void Step(int action) {
         // Robot action indices:
         // 0 = up, 1 = down, 2 = left, 3 = right 
-        std::vector<std::pair<int, int>> const moves {{
-            {-1, 0}, {1, 0}, {0, -1}, {0, 1}
-        }};
-
         auto [dr, dc] {moves[action]};
         std::pair<int, int> new_pos = {position.first + dr, position.second + dc}; 
         if (CanMove(new_pos)) position = new_pos;
     }
 
+    // Sensor data is used as input for the program
+    // Based on different sensor inputs, the program decides which action to take
     void UpdateSensors() {
         double up {IsWall({position.first - 1, position.second}) ? 1.0 : 0.0};
         double down {IsWall({position.first + 1, position.second}) ? 1.0 : 0.0};

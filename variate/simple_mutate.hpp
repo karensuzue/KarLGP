@@ -6,6 +6,7 @@ Mutate each part of instruction with equal probability
 #ifndef SIMPLE_MUTATE_HPP
 #define SIMPLE_MUTATE_HPP
 
+#include <cassert>
 #include <random>
 #include <vector>
 #include <memory>
@@ -28,9 +29,35 @@ public:
         std::vector<Instruction> instructions = prog.GetInstructions();
 
         for (Instruction & instr : instructions) {
-            if (prob_dist(rng) < mutation_rate) instr.op = GLOBAL_OPERATORS.GetRandomOpID();
+            // Mutate operator (unary/binary OR ternary)
+            if (prob_dist(rng) < mutation_rate) {
+                if (prob_dist(rng) < 0.5) {
+                    instr.op = GLOBAL_OPERATORS.GetRandomOpID();
+                    instr.op_type = 0;
+                    instr.Rt.reset();
+                }
+                else {
+                    instr.op = GLOBAL_OPERATORS.GetRandomTernaryOpID();
+                    instr.op_type = 1;
+                    // if we're switching from unary/binary to ternary, Rt is uninitialized
+                    if (!instr.Rt.has_value()) { 
+                        instr.Rt = reg_dist(rng);
+                    }
+                }
+                
+            }
+
+            // Mutate destination register
             if (prob_dist(rng) < mutation_rate) instr.Ri = reg_dist(rng);
+
+            // Mutate operand (j - register only)
             if (prob_dist(rng) < mutation_rate) instr.Rj = reg_dist(rng);
+
+            // Mutate operand (t - register only, only for ternary)
+            if (instr.op_type == 1 && instr.Rt.has_value() && 
+                prob_dist(rng) < mutation_rate) instr.Rt = reg_dist(rng);
+
+            // Mutate operand (k - register OR constant)
             if (prob_dist(rng) < mutation_rate) {
                 if (instr.Rk_type == RkType::CONSTANT) {
                     if (prob_dist(rng) < 0.5 && GLOBAL_CONSTANTS.Size() > 0) {
@@ -49,7 +76,6 @@ public:
                         instr.Rk_type = RkType::CONSTANT;
                         instr.Rk = GLOBAL_CONSTANTS.GetRandomConstant();
                     }
-
                 }
             }
         }
@@ -63,8 +89,9 @@ public:
 
     }
     
-    std::unique_ptr<Program> Apply(Program const & p1, Program const & p2) const override {
-        throw std::runtime_error("SimpleMutate is not a binary operator.");
+    std::unique_ptr<Program> Apply(Program const &, Program const &) const override {
+        assert(false && "SimpleMutate is not a binary operator.");
+        return std::unique_ptr<Program>();
     }
 };
 

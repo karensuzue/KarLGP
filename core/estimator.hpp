@@ -36,6 +36,13 @@ private:
     std::vector<double> semantic_intron_elim_history;
     std::vector<double> structural_intron_history;
 
+    // For novelty and surprise search
+    // Archive of diverse past behaviors (MazeProg only)
+    std::vector<std::pair<double, double>> behavior_archive;
+    double p_min {2.0};
+    // Behaviors collected from the population (changes every generation)
+    std::vector<std::pair<double, double>> pop_behavior_set;
+
     std::mt19937 rng;
 
     bool verbose;
@@ -72,6 +79,44 @@ public:
             p->SetFitness(evaluator->Evaluate(*p));
         }
     }
+
+
+    // ---- NOVELTY SEARCH FUNCTIONS (WIP) ----
+
+    // Evaluates BEHAVIOR of each program in the population
+    // Appends them to the population behavior set
+    // Must be called BEFORE EvalPopulation() (which calculates NOVELTY)
+    void UpdatePopulationBehaviorSet() {
+        pop_behavior_set.clear();
+        
+        MazeNoveltyEvaluator & eval {dynamic_cast<MazeNoveltyEvaluator&>(*evaluator)};
+
+        for (std::unique_ptr<Program> & p : population) {
+            MazeProgram & prog {dynamic_cast<MazeProgram&>(*p)};
+
+            eval.EvaluateBehavior(prog);
+            pop_behavior_set.push_back(prog.GetBehavior());
+        }
+    }
+
+    // To be added to the archive, programs must exceed p_min in terms of fitness 
+    // Originally intended for novelty search (novelty is stored as fitness)
+    // For now, p_min is static. 
+    // Must be called AFTER EvalPopulation()
+    size_t UpdateBehaviorArchive() {
+        size_t addition_count {0};
+        for (std::unique_ptr<Program> & p : population) {
+            if (p->GetFitness() > p_min) { // we're maximizing
+                MazeProgram & prog {dynamic_cast<MazeProgram&>(*p)};
+                behavior_archive.push_back(prog.GetBehavior());
+                ++addition_count;
+            }
+        }
+
+        return addition_count; // returns number of archive additions to adjust p_min
+    }
+
+    // ------------------------------
 
     // // Proportion of structural introns in program code, averaged across the entire population
     double AvgStructuralIntronProp() {
@@ -151,20 +196,31 @@ public:
         // quality_gain_history.clear();
         // success_rate_history.clear();
 
-        semantic_intron_history.clear();
-        semantic_intron_elim_history.clear();
-        structural_intron_history.clear();
+        // semantic_intron_history.clear();
+        // semantic_intron_elim_history.clear();
+        // structural_intron_history.clear();
     }
 
     void Evolve() { 
         if (verbose) { PrintRunParam(os); }
 
-        InitPopulation();
-        EvalPopulation();
+        InitPopulation(); 
+
+        // ---- NOVELTY SEARCH ----
+        UpdatePopulationBehaviorSet();
+        MazeNoveltyEvaluator & eval {dynamic_cast<MazeNoveltyEvaluator&>(*evaluator)};
+        eval.SetOtherBehaviors(pop_behavior_set);
+        // ------------------------
+
+        EvalPopulation(); // evaluate their fitness
+
+        // ---- NOVELTY SEARCH ----
+        UpdateBehaviorArchive();    
+        // ------------------------
 
         best_program = population[0]->Clone();
         for (std::unique_ptr<Program> const & p : population) {
-            if (p->GetFitness() < best_program->GetFitness()) {
+            if (p->GetFitness() > best_program->GetFitness()) {
                 best_program = p->Clone();
             }
         }
@@ -172,11 +228,13 @@ public:
         avg_fitness_history.push_back(AvgFitness());
         median_fitness_history.push_back(MedianFitness());
 
-        semantic_intron_history.push_back(AvgSemanticIntronProp());
-        semantic_intron_elim_history.push_back(AvgSemanticIntronProp_Elimination());
-        structural_intron_history.push_back(AvgStructuralIntronProp());
+        // semantic_intron_history.push_back(AvgSemanticIntronProp());
+        // semantic_intron_elim_history.push_back(AvgSemanticIntronProp_Elimination());
+        // structural_intron_history.push_back(AvgStructuralIntronProp());
         
         // Begin evolutionary loop
+
+        size_t no_addition_counter {0};
         for (size_t gen {0}; gen < gens; ++gen) {
             if (verbose) { 
                 PrintGenSummary(gen, best_fitness_history[gen], avg_fitness_history[gen], median_fitness_history[gen], os); 
@@ -234,16 +292,45 @@ public:
                 new_pop.push_back(std::move(child));
             }
 
-            // Update population, re-evaluate fitness, overall best program
+            // Update population
             population = std::move(new_pop);
-            EvalPopulation();
 
+            // ---- NOVELTY SEARCH ----
+            UpdatePopulationBehaviorSet();            
+            // ------------------------
+
+            EvalPopulation(); 
+            
+            // ---- NOVELTY SEARCH ----
+            size_t addition_count {UpdateBehaviorArchive()};
+            // Concatenate archive and population behavior set
+            std::vector<std::pair<double, double>> all_behaviors {pop_behavior_set};
+            all_behaviors.insert(all_behaviors.end(), behavior_archive.begin(), behavior_archive.end());
+            eval.SetOtherBehaviors(all_behaviors);
+
+            // Adjust p_min dynamically
+            // If no new additions over 25 generations, decrease p_min
+            // If more than 4 additions within a single generation, increase p_min
+            if (addition_count > 4) p_min *= 1.05;
+
+            if (addition_count == 0) ++no_addition_counter;
+            else no_addition_counter = 0; // reset
+
+            if (no_addition_counter >= 25) {
+                p_min *= 0.95;
+                no_addition_counter = 0;
+            }
+
+            if (verbose) os << "P_min: " << p_min << std::endl;
+            
+            // ------------------------
+
+            // Update best program
             for (std::unique_ptr<Program> const & p : population) {
-                if (p->GetFitness() < best_program->GetFitness()) {
+                if (p->GetFitness() > best_program->GetFitness()) {
                     best_program = p->Clone();
                 }
             }
-
             best_fitness_history.push_back(best_program->GetFitness());
 
             // double prev_avg_fitness {avg_fitness_history.back()};
@@ -257,9 +344,9 @@ public:
 
             median_fitness_history.push_back(MedianFitness());
 
-            semantic_intron_history.push_back(AvgSemanticIntronProp());
-            semantic_intron_elim_history.push_back(AvgSemanticIntronProp_Elimination());
-            structural_intron_history.push_back(AvgStructuralIntronProp());
+            // semantic_intron_history.push_back(AvgSemanticIntronProp());
+            // semantic_intron_elim_history.push_back(AvgSemanticIntronProp_Elimination());
+            // structural_intron_history.push_back(AvgStructuralIntronProp());
         }
         
         if (verbose) {
@@ -277,7 +364,7 @@ public:
             Evolve();
             ExportFitnessHistory("fitness_run_" + std::to_string(i) + ".csv");
             // ExportEffectHistory("effect_run_" + std::to_string(i) + ".csv");
-            ExportIntronHistory("intron_run_" + std::to_string(i) + ".csv");
+            // ExportIntronHistory("intron_run_" + std::to_string(i) + ".csv");
             
             std::ofstream ofs("best_program_" + std::to_string(i) + ".txt");
             if (ofs.is_open()) {

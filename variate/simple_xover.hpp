@@ -6,6 +6,7 @@ Swap each part of instruction with equal probability
 #ifndef SIMPLE_XOVER_HPP
 #define SIMPLE_XOVER_HPP
 
+#include <cassert>
 #include <random>
 #include <vector>
 #include <memory>
@@ -21,8 +22,9 @@ public:
 
     VariatorType Type() const override { return VariatorType::BINARY; }
     
-    std::unique_ptr<Program> Apply(Program const & prog) const override {
-        throw std::runtime_error("SimpleCrossover is not a unary operator.");
+    std::unique_ptr<Program> Apply(Program const & ) const override {
+        assert(false && "SimpleCrossover is not a unary operator.");
+        return std::unique_ptr<Program>();
     }
 
     std::unique_ptr<Program> Apply(Program const & p1, Program const & p2) const override {
@@ -32,9 +34,8 @@ public:
         std::vector<Instruction> instr1 = p1.GetInstructions();
         std::vector<Instruction> instr2 = p2.GetInstructions();
 
-        if (instr1.size() != instr2.size()) {
-            throw std::invalid_argument("Programs must have same number of instructions for crossover.");
-        }
+        assert (instr1.size() == instr2.size() &&
+         "Programs must have same number of instructions for crossover.");
 
         std::vector<Instruction> child_instr;
 
@@ -43,10 +44,37 @@ public:
             Instruction const & b {instr2[i]};
             
             Instruction temp;
-            temp.op = (prob_dist(rng) < xover_rate) ? b.op : a.op;
+            // Choose operator
+            if (prob_dist(rng) < xover_rate) {
+                temp.op = b.op;
+                temp.op_type = b.op_type;
+            }
+            else {
+                temp.op = a.op;
+                temp.op_type = a.op_type;
+            }
+
+            // Choose destination register
             temp.Ri = (prob_dist(rng) < xover_rate) ? b.Ri : a.Ri;
+
+            // Choose operand (j - register only)
             temp.Rj = (prob_dist(rng) < xover_rate) ? b.Rj : a.Rj;
 
+            // Choose operand (t - register only, only for ternary operators)
+            if (a.op_type == 1 && b.op_type == 1 && temp.op_type == 1) {
+                // If both instructions are ternary
+                temp.Rt = (prob_dist(rng) < xover_rate) ? b.Rt : a.Rt;
+            }
+            else if (a.op_type == 1 && b.op_type == 0 && temp.op_type == 1) {
+                // If only instruction a is ternary
+                temp.Rt = a.Rt;
+            }
+            else if (b.op_type == 1 && a.op_type == 0 && temp.op_type == 1) {
+                // If only instruction b is ternary
+                temp.Rt = b.Rt;
+            }
+
+            // Choose operand (k - register OR constant)
             if (prob_dist(rng) < xover_rate) {
                 temp.Rk_type = b.Rk_type;
                 temp.Rk = b.Rk;
@@ -55,7 +83,6 @@ public:
                 temp.Rk_type = a.Rk_type;
                 temp.Rk = a.Rk;
             }
-            // temp.Rk = (prob_dist(rng) < xover_rate) ? b.Rk : a.Rk;
 
             child_instr.push_back(temp);
         }

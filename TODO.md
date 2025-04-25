@@ -25,7 +25,13 @@
 - Geometric mean: exponential skew, take log of all vals find mean of that then re exponentiate (make sure same base as when log)
 - NUMBER 1: Start your program with a perfect solution, make sure it does not evolve away (if it does, error in system :/)
 - if large scale, maybe dont have global variables
-
+- MAKE EVERYTHING CONSISTENT - arith prog doesnt support ternary operators, but maze prog does
+- change std::vector to emp::vector (so far, just maze_prog and operators)
+- novelty archive threshold (p_min) is currently static, not dynamic
+- limit archive size
+- refactor code for better performance and coding practices because right now everything is a mess
+- 4/24: changed fitness to be maximizing instead of minimizing.
+    - MSE Eval needs to be updated
 
 ## Maze Navigation Domain
 - Implement other kinds of maze generation algorithms
@@ -38,5 +44,9 @@
     - Binary tree might be a good idea, because to generate paths it always moves down and right
         - as long as goal aligns with starting point, this usually creates a deceptive maze
         - Downside is more deterministic/predictable shape
+- MazeEval: allow for a test set of mazes with different dimensions
+- I wonder if including angle to goal in sensor will have an effect on evolution
 
-- I wonder if including angle to goal will have a negative effect on evolution
+- Testing:
+    - Does MazeProgram work with MazeEnv?
+    

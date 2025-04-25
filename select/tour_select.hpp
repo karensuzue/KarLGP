@@ -21,8 +21,7 @@ public:
         Program const * best {nullptr};
         for (size_t i {0}; i < tournament_size; ++i) {
             std::unique_ptr<Program> const & candidate {pop[dist(rng)]};
-            // Fitness is error-based, so minimizing
-            if (!best || best->GetFitness() > candidate->GetFitness()) {
+            if (!best || best->GetFitness() < candidate->GetFitness()) {
                 best = &(*candidate); // address to the Program object under the smart pointer
             }
         }

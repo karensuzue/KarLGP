@@ -28,6 +28,8 @@ public:
     virtual void SetFitness(double f) = 0;
     virtual bool IsEvaluated() const = 0;
 
+    virtual std::vector<double> GetRegisters() const = 0;
+
     virtual void ResetRegisters() = 0;
     virtual void ResetFitness() = 0;
 

@@ -2,6 +2,7 @@
 #define INSTRUCTIONS_HPP
 
 #include <variant>
+#include <optional>
 
 enum class RkType {
     REGISTER,
@@ -14,7 +15,7 @@ enum class RegisterType {
 };
 
 struct Instruction {
-    // Instructions are representd as r[i] = r[j] op r[k]
+    // Instructions are representd as r[i] = op (r[j] r[k])
     // Operators are determined using strings
     // Two possibilities for r[k] - register or constant.
     // Because we're using numbers to represent registers, we need a way to differentiate
@@ -25,6 +26,12 @@ struct Instruction {
     RkType Rk_type;
     std::variant<size_t, double> Rk; // 'size_t' for index, 'double' for constant
     size_t op; // Index of operator in global operators set
+
+    // TERNARY-ONLY
+    // Instructions can now look like this: r[i] = op (r[j] r[t] r[k])
+    std::optional<size_t> Rt; // for index of Register...Ternary
+
+    size_t op_type; // 0 = unary/binary, 1 = ternary
 };
 
 

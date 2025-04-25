@@ -5,8 +5,8 @@
 
 // ----PARAMETERS (DON'T MODIFY NAMES)----
 
-// Global seed 
-// constexpr int SEED = 0;
+Global seed 
+constexpr int SEED = 0;
 std::random_device rd;
 int SEED = rd();
 constexpr size_t REGISTER_COUNT = 10;
