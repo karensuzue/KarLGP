@@ -7,8 +7,9 @@
 #include <random>
 #include <cassert>
 #include <algorithm>
-
 #include <iomanip>
+
+#include "emp/base/vector.hpp"
 
 #include "../core/base_eval.hpp"
 
@@ -17,9 +18,9 @@ private:
     size_t max_steps;
     size_t maze_count;
     size_t maze_row, maze_col;
-    mutable std::vector<MazeEnvironment> train_mazes; // training cases
+    mutable emp::vector<MazeEnvironment> train_mazes; // training cases
 
-    std::vector<std::pair<double, double>> other_behaviors;
+    emp::vector<std::pair<double, double>> other_behaviors;
     size_t k; // number of neighbors for novelty calculation
 
 
@@ -34,22 +35,25 @@ public:
             // Seed is taken from indices to vary goal positions
             MazeEnvironment temp(r, c, {1,1}, i);
             temp.GenerateMazeBinary();
-            train_mazes.push_back(std::move(temp));
+            temp.MakeMazeMoreOpen();
+            train_mazes.emplace_back(std::move(temp));
 
             MazeEnvironment temp2(r, c, {1,1}, i);
             temp2.GenerateMazeDFS();
-            train_mazes.push_back(std::move(temp2));
+            temp2.MakeMazeMoreOpen();
+            train_mazes.emplace_back(std::move(temp2));
         }
 
         if (maze_count % 2 != 0) {
             MazeEnvironment temp(r, c, {1,1}, SEED);
             temp.GenerateMazeDFS();
-            train_mazes.push_back(std::move(temp));
+            temp.MakeMazeMoreOpen();
+            train_mazes.emplace_back(std::move(temp));
         }
     }
 
     // Must be called before Evaluate()
-    void SetOtherBehaviors(std::vector<std::pair<double, double>> const & ob) {
+    void SetOtherBehaviors(emp::vector<std::pair<double, double>> const & ob) {
         other_behaviors = ob;
     }
     
@@ -82,21 +86,22 @@ public:
         std::pair<double, double> avg_final_pos(0, 0);
 
         for (MazeEnvironment & maze : train_mazes) {
-
+            maze.ResetRobotPosition();
             SimulateSingleMaze(prog, maze);
 
             // Get final position of robot in maze
-            avg_final_pos.first += maze.GetRobotPosition().first;
-            avg_final_pos.second += maze.GetRobotPosition().second;
+            avg_final_pos.first += maze.GetRobotPosition().first; // row
+            avg_final_pos.second += maze.GetRobotPosition().second; // col
 
             // Between mazes/training cases, reset program registers
             prog.ResetRegisters();
+            maze.ResetRobotPosition();
         }
 
         avg_final_pos.first /= maze_count;
         avg_final_pos.second /= maze_count;
 
-        prog.SetBehavior(avg_final_pos); // just... in case??
+        // prog.SetBehavior(avg_final_pos); // just... in case??
 
         return avg_final_pos;
     }
@@ -109,33 +114,46 @@ public:
         MazeProgram & prog = dynamic_cast<MazeProgram&>(p);
         assert(prog.IsBehaviorEvaluated() && "Program behavior has not been evaluated yet.");
 
+        // ------ OLD ------
         // Calculate behavioral distances between current program and 
         // others in the population and archive
-        std::vector<double> distances;
+        emp::vector<double> distances;
         for (std::pair<double, double> const & neighbor : other_behaviors) {
             distances.emplace_back(BehaviorDistance(prog.GetBehavior(), neighbor));
         }
 
+        assert(distances.size() >= k && "Not enough neighbors to calculate novelty!");
+
         // Sort behavior distances to obtain k-nearest neighbors
         std::sort(distances.begin(), distances.end());
-        int novelty {0};
+        double novelty {0};
         for (size_t i {0}; i < k; ++i) {
             novelty += distances[i];
         }
-        
+
         // Novelty will be stored as fitness in program
         return novelty / k;  
     }
 
-
-
-    std::vector<MazeEnvironment> const & GetInputMazes() const {
+    emp::vector<MazeEnvironment> const & GetTrainingMazes() const {
         return train_mazes;
     }
 
-    std::vector<double> GetInputSet() const override {
+    void SetTrainingMazes(emp::vector<MazeEnvironment> const & mazes) {
+        train_mazes = mazes;
+    }
+
+    void SaveTrainingMazes() const {
+
+    }
+
+    void LoadTrainingMazes() {
+
+    }
+
+    emp::vector<double> GetInputSet() const override {
         assert(false && "MazeEvaluator::GetInputSet() is not supported.");
-        return std::vector<double>();
+        return emp::vector<double>();
     }
 
 

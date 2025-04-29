@@ -28,10 +28,15 @@ public:
     virtual void SetFitness(double f) = 0;
     virtual bool IsEvaluated() const = 0;
 
+    virtual double GetSecondFitness() const = 0;
+    virtual void SetSecondFitness(double f) = 0;
+    virtual bool IsSecondEvaluated() const = 0;
+
     virtual std::vector<double> GetRegisters() const = 0;
 
     virtual void ResetRegisters() = 0;
     virtual void ResetFitness() = 0;
+    virtual void ResetSecondFitness() = 0;
 
     virtual double StructuralIntronProp() const = 0;
     virtual double SemanticIntronProp(Evaluator const & eval) = 0;

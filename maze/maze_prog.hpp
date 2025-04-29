@@ -5,7 +5,7 @@
 #include <memory>
 #include <optional>
 
-// #include "emp/base/vector.hpp"
+#include "emp/base/vector.hpp"
 
 #include "../core/base_prog.hpp"
 
@@ -16,12 +16,15 @@ private:
     size_t register_count, program_length;
     double rk_prob {0.3}; // Hard-coded, probability of including constant over register
 
-    std::vector<double> registers; // Holds register values (ONLY DOUBLE FOR NOW)
-    // std::vector<RegisterType> register_types; // Controls register access
+    emp::vector<double> registers; // Holds register values (ONLY DOUBLE FOR NOW)
+    // emp::vector<RegisterType> register_types; // Controls register access
 
-    std::vector<Instruction> instructions; // Program instructions
+    emp::vector<Instruction> instructions; // Program instructions
 
     std::optional<double> fitness; 
+
+    std::optional<double> second_fitness; // Secondary fitness, does not effect selection
+
     // std::optional<double> novelty; // population-based metric
     // defined as the final position of the robot, averaged across multiple mazes
     std::optional<std::pair<double, double>> behavior; 
@@ -34,7 +37,7 @@ public:
       program_length(pl),
       rng(SEED)
     {   
-        registers = std::vector<double> (register_count, 0.0);
+        registers = emp::vector<double> (register_count, 0.0);
         InitProgram();
     }
 
@@ -53,7 +56,7 @@ public:
         instructions.clear(); // just in case
         ResetRegisters();
         
-        instructions = std::vector<Instruction>(program_length);
+        instructions = emp::vector<Instruction>(program_length);
 
         std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
         std::uniform_int_distribution<size_t> reg_dist(0, register_count - 1);
@@ -142,7 +145,7 @@ public:
     }
 
 
-    void Input(std::vector<double> inputs) {
+    void Input(emp::vector<double> inputs) {
         // Registers 0-4 hold sensor inputs
         // Register 5 hold output
         for (size_t i {0}; i < 5; ++i) {
@@ -169,17 +172,22 @@ public:
         return fitness.value(); 
     }
 
+    double GetSecondFitness() const override {
+        assert(second_fitness && "Secondary fitness has not been evaluated.");
+        return second_fitness.value(); 
+    }
+
     std::pair<double, double> GetBehavior() const {
         assert(behavior.has_value() && "Behavior has not been evaluated.");
         return behavior.value(); 
     }
 
-    double GetBehaviorX() const {
+    double GetBehaviorR() const {
         assert(behavior.has_value() && "Behavior has not been evaluated.");
         return behavior.value().first;
     }
     
-    double GetBehaviorY() const {
+    double GetBehaviorC() const {
         assert(behavior.has_value() && "Behavior has not been evaluated.");
         return behavior.value().second;
     }
@@ -191,13 +199,16 @@ public:
 
     void SetFitness(double val) override { fitness = val; }
     void SetBehavior(std::pair<double, double> val) { behavior = val; }
+    void SetSecondFitness(double val) override { second_fitness = val; }
     // void SetNovelty(double val) { novelty = val; }
 
-    bool IsEvaluated() const { return fitness.has_value(); }
+    bool IsEvaluated() const override { return fitness.has_value(); }
     bool IsBehaviorEvaluated() const { return behavior.has_value(); }
+    bool IsSecondEvaluated() const override { return second_fitness.has_value(); }
     // bool IsNoveltyEvaluated() const { return novelty.has_value(); }
 
     void ResetFitness() override { fitness.reset(); }
+    void ResetSecondFitness() override { second_fitness.reset(); }
     void ResetBehavior() { behavior.reset(); }
     // void ResetNovelty() { novelty.reset(); }
 
@@ -207,12 +218,12 @@ public:
         }
     }
 
-    std::vector<double> GetRegisters() const override {
+    emp::vector<double> GetRegisters() const override {
         return registers;
     }
 
-    std::vector<Instruction> GetInstructions() const override { return instructions; }
-    void SetInstructions(std::vector<Instruction> const & in) override { instructions = in; }
+    emp::vector<Instruction> GetInstructions() const override { return instructions; }
+    void SetInstructions(emp::vector<Instruction> const & in) override { instructions = in; }
 
     void PrintProgram(std::ostream & os) const override {
         for (Instruction const & instr : instructions) {

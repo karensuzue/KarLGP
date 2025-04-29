@@ -7,21 +7,23 @@
 #include <random>
 #include <cmath>
 
+#include "emp/base/vector.hpp"
+
 class MazeEnvironment {
 private:
-    std::vector<std::vector<bool>> grid; // 0 = open space, 1 = wall
+    emp::vector<emp::vector<bool>> grid; // 0 = open space, 1 = wall
     int rows, cols;
     std::pair<int, int> start; // start coordinate
     std::pair<int, int> goal; // goal coordinate
 
     std::pair<int, int> position; // robot position
-    std::vector<double> sensors{5}; // robot sensors
+    emp::vector<double> sensors{5}; // robot sensors
 
     std::mt19937 rng;
 
     // Robot action indices (default):
     // 0 = up, 1 = down, 2 = left, 3 = right 
-    std::vector<std::pair<int, int>> moves;
+    emp::vector<std::pair<int, int>> moves;
 
 public:
     // Start at {1, 1} to leave room for edge walls
@@ -37,16 +39,14 @@ public:
         moves = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
     }
 
-    void ImportMaze() {
-        // Import maze from text file
-        
-    }
-
     void GenerateGoal() {
+        // Vary goal position (but not too much) so that strategy avoids "wall-hugging" and
+        // encourages generality 
+
         // Goal should preferably be towards the bottom half
-        std::uniform_int_distribution<int> row_dist(rows / 2, rows - 2);
+        // std::uniform_int_distribution<int> row_dist(rows / 2, rows - 2);
         std::uniform_int_distribution<int> col_dist(1, cols - 2);
-        goal = {row_dist(rng), col_dist(rng)};
+        goal = {rows - 2, col_dist(rng)};
     }
 
     void GenerateMazeDFS() {
@@ -56,7 +56,7 @@ public:
 
         // Assume a wall exists between 2 neighbors
         // We connect neighbors by "knocking down" the wall
-        std::vector<std::pair<int,int>> directions = {
+        emp::vector<std::pair<int,int>> directions = {
             {0, -2}, // up
             {0, 2}, // down
             {-2, 0}, // left
@@ -64,7 +64,7 @@ public:
         };
 
         // Start by initializing grid with walls
-        grid = std::vector<std::vector<bool>> (rows, std::vector<bool> (cols, true));
+        grid = emp::vector<emp::vector<bool>> (rows, emp::vector<bool> (cols, true));
 
         // Mark starting cell as open
         grid[start.first][start.second] = false;
@@ -75,7 +75,7 @@ public:
         // Start DFS traversal
         while (!stack.empty()) {
             std::pair<int,int> current_coord {stack.top()};
-            std::vector<std::pair<int,int>> neighbor_coords;
+            emp::vector<std::pair<int,int>> neighbor_coords;
 
             // Look for unvisited neighbors
             for (auto const & [dr, dc] : directions) {
@@ -86,7 +86,7 @@ public:
                 if (neighbor_r > 0 && neighbor_r < rows - 1 &&
                     neighbor_c > 0 && neighbor_c < cols - 1 &&
                     grid[neighbor_r][neighbor_c]) {
-                        neighbor_coords.push_back({neighbor_r, neighbor_c});
+                        neighbor_coords.emplace_back(neighbor_r, neighbor_c);
                     }
             }
 
@@ -120,7 +120,7 @@ public:
         // Also guarantees a perfect maze
         // At each cell, algorithm always move down or right
 
-        // std::vector<std::pair<int,int>> directions = {
+        // emp::vector<std::pair<int,int>> directions = {
         //     {0, -2}, // up
         //     {0, 2}, // down
         //     {-2, 0}, // left
@@ -128,7 +128,7 @@ public:
         // };
 
         // Start by initializing grid with walls
-        grid = std::vector<std::vector<bool>> (rows, std::vector<bool> (cols, true));
+        grid = emp::vector<emp::vector<bool>> (rows, emp::vector<bool> (cols, true));
 
         // Mark starting cell as open
         // grid[start.first][start.second] = false;
@@ -136,12 +136,12 @@ public:
         for (int i {1}; i < rows - 1; i += 2) {
             for (int j {1}; j < cols - 1; j += 2) {
                 grid[i][j] = false;
-                std::vector<std::pair<int,int>> neighbor_coords;
+                emp::vector<std::pair<int,int>> neighbor_coords;
 
                 // Check for south neighbor
-                if (i + 2 < rows - 1) neighbor_coords.push_back({i + 2, j});
+                if (i + 2 < rows - 1) neighbor_coords.emplace_back(i + 2, j);
                 // Check for east neighbor
-                if (j + 2 < cols - 1) neighbor_coords.push_back({i, j + 2});
+                if (j + 2 < cols - 1) neighbor_coords.emplace_back(i, j + 2);
 
                 if (!neighbor_coords.empty()) {
                     // Select a random neighbor
@@ -160,8 +160,33 @@ public:
         GenerateGoal();
     }
 
+    // Tight paths may be too difficult for novelty search
+    // Knock down some walls (half of squares in grid)
+    void MakeMazeMoreOpen(/*int walls=50*/) {
+        int walls {static_cast<int>((rows-1) * (cols-1) * 0.8)};
+        std::uniform_int_distribution<int> row_dist(1, rows - 2);
+        std::uniform_int_distribution<int> col_dist(1, cols - 2);
+    
+        for (int i {0}; i < walls; ++i) {
+            int r {row_dist(rng)};
+            int c {col_dist(rng)};
+            // Turn random wall into path if it's a wall
+            if (IsWall({r, c})) {
+                grid[r][c] = 0;
+            }
+        }
+    }
+
     std::pair<int, int> GetRobotPosition() const {
-        return position;
+        return position; // {row, col}
+    }
+
+    std::pair<int, int> GetGoalPosition() const {
+        return goal;
+    }
+
+    std::pair<int, int> GetStartPosition() const {
+        return start;
     }
 
     void ResetRobotPosition() {
@@ -205,13 +230,13 @@ public:
         sensors = {up, down, left, right, angle};
     } 
 
-    std::vector<double> GetSensors() const {
+    emp::vector<double> GetSensors() const {
         return sensors;
     }
 
     double GetGoalAngle() const {
-        int dx {goal.second - position.second}; // x is cols
-        int dy {goal.first - position.first}; // y is rows
+        int dx {goal.second - position.second}; // x is col
+        int dy {goal.first - position.first}; // y is row
 
         double angle {std::atan2(dy, dx)}; // [-pi, pi]
 
@@ -219,14 +244,21 @@ public:
     }
 
     double GetDistToGoal() const {
-        // return std::sqrt(std::pow(goal.second - position.second, 2) + std::pow(goal.first - position.first, 2));
-        int dx {goal.second - position.second};
-        int dy {goal.first - position.first};
+        int dx {goal.second - position.second}; // col
+        int dy {goal.first - position.first}; // row
         return std::hypot(dx, dy);
     }
 
     bool ReachedGoal() const {
         return position == goal;
+    }
+
+    void SaveMaze() const {
+
+    }
+
+    void LoadMaze() {
+
     }
 
     void PrintMaze(std::ostream & os) const {
@@ -247,6 +279,7 @@ public:
         maze.PrintMaze(os);
         return os;
     }
+
 };
 
 #endif
