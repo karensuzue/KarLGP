@@ -20,7 +20,7 @@ public:
     virtual double ExecuteProgram() = 0;
 
     virtual void Input(double x) = 0;
-    // virtual void Input(std::vector<double> x) = 0;
+    // virtual void Input(emp::vector<double> x) = 0;
 
     virtual double GetOutput() const = 0;
 
@@ -32,7 +32,7 @@ public:
     virtual void SetSecondFitness(double f) = 0;
     virtual bool IsSecondEvaluated() const = 0;
 
-    virtual std::vector<double> GetRegisters() const = 0;
+    virtual emp::vector<double> GetRegisters() const = 0;
 
     virtual void ResetRegisters() = 0;
     virtual void ResetFitness() = 0;
@@ -42,8 +42,8 @@ public:
     virtual double SemanticIntronProp(Evaluator const & eval) = 0;
     virtual double SemanticIntronProp_Elimination(const Evaluator& eval) const = 0;
 
-    virtual std::vector<Instruction> GetInstructions() const = 0;
-    virtual void SetInstructions(std::vector<Instruction> const & instr) = 0;
+    virtual emp::vector<Instruction> GetInstructions() const = 0;
+    virtual void SetInstructions(emp::vector<Instruction> const & instr) = 0;
 
     virtual void PrintProgram(std::ostream & os) const = 0;
 

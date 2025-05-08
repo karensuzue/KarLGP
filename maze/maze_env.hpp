@@ -6,6 +6,7 @@
 #include <stack>
 #include <random>
 #include <cmath>
+#include <queue>
 
 #include "emp/base/vector.hpp"
 
@@ -28,8 +29,8 @@ private:
 public:
     // Start at {1, 1} to leave room for edge walls
     // Make sure rows and cols are odd
-    MazeEnvironment(int r=21, int c=21, std::pair<int, int> start={1,1}, int seed=SEED) 
-    : rows(r), cols(c), start(start), position(start), rng(seed)
+    MazeEnvironment(int cell_count_row=21, int cell_count_col=21, std::pair<int, int> start={1,1}, int seed=SEED) 
+    : rows(2 * cell_count_row + 1), cols(2 * cell_count_col + 1), start(start), position(start), rng(seed)
     {
         // GenerateMazeDFS();
         // goal = {rows - 2, 1};
@@ -67,10 +68,11 @@ public:
         grid = emp::vector<emp::vector<bool>> (rows, emp::vector<bool> (cols, true));
 
         // Mark starting cell as open
-        grid[start.first][start.second] = false;
+        // grid[start.first][start.second] = false;
+        grid[rows/2][cols/2] = false;
 
         std::stack<std::pair<int,int>> stack;
-        stack.push(start);
+        stack.push({rows/2, cols/2});
 
         // Start DFS traversal
         while (!stack.empty()) {
@@ -120,13 +122,6 @@ public:
         // Also guarantees a perfect maze
         // At each cell, algorithm always move down or right
 
-        // emp::vector<std::pair<int,int>> directions = {
-        //     {0, -2}, // up
-        //     {0, 2}, // down
-        //     {-2, 0}, // left
-        //     {2, 0} // right
-        // };
-
         // Start by initializing grid with walls
         grid = emp::vector<emp::vector<bool>> (rows, emp::vector<bool> (cols, true));
 
@@ -160,6 +155,75 @@ public:
         GenerateGoal();
     }
 
+    void GenerateMazePrim() {
+        // Initialize full grid of walls
+        grid = emp::vector<emp::vector<bool>>(rows, emp::vector<bool>(cols, true));
+
+        // Directions in steps of 2 (since cells are separated by walls)
+        emp::vector<std::pair<int, int>> directions = {
+            {0, -2}, {0, 2}, {-2, 0}, {2, 0} // up, down, left, right
+        };
+
+        // Choose a random starting cell (odd row/col)
+        std::uniform_int_distribution<int> row_dist(1, rows - 2);
+        std::uniform_int_distribution<int> col_dist(1, cols - 2);
+        int start_r = row_dist(rng) | 1; // force odd
+        int start_c = col_dist(rng) | 1; // force odd
+
+        std::pair<int, int> first = {start_r, start_c};
+        grid[start_r][start_c] = false;
+
+        emp::vector<std::pair<int, int>> path;
+        path.push_back(first);
+
+        // Mark all non-wall cells around starting point as unvisited
+        emp::vector<std::pair<int, int>> unvisited;
+        for (int r {1}; r < rows; r += 2) { // every other cell 
+            for (int c {1}; c < cols; c += 2) {
+                if (!(r == start_r && c == start_c)) {
+                    unvisited.emplace_back(r, c);
+                }
+            }
+        }
+
+        while (!unvisited.empty()) {
+            // Select a random cell from the current path
+            std::uniform_int_distribution<size_t> dist(0, path.size() - 1);
+            std::pair<int, int> current = path[dist(rng)]; 
+
+            // Identify unvisited neighbors
+            emp::vector<std::pair<int, int>> neighbors;
+            for (auto const & [dr, dc] : directions) {
+                int nr {current.first + dr};
+                int nc {current.second + dc};
+                if (nr > 0 && nr < rows - 1 && nc > 0 && nc < cols - 1) {
+                    if (std::find(path.begin(), path.end(), std::make_pair(nr, nc)) == path.end()) {
+                        neighbors.emplace_back(nr, nc);
+                    }
+                }
+            }
+
+            if (!neighbors.empty()) {
+                // Choose a random neighbor
+                std::uniform_int_distribution<size_t> neighbor_dist(0, neighbors.size() - 1);
+                std::pair<int, int> neighbor {neighbors[neighbor_dist(rng)]};
+
+                // Link current and neighbor
+                int wall_r {(current.first + neighbor.first) / 2};
+                int wall_c {(current.second + neighbor.second) / 2};
+                grid[neighbor.first][neighbor.second] = false; // knock down walls
+                grid[wall_r][wall_c] = false;
+                path.push_back(neighbor);
+
+                // Remove from unvisited
+                auto it {std::find(unvisited.begin(), unvisited.end(), neighbor)};
+                if (it != unvisited.end()) unvisited.erase(it);
+            }
+        }
+
+        GenerateGoal();
+    }
+
     // Tight paths may be too difficult for novelty search
     // Knock down some walls (half of squares in grid)
     void MakeMazeMoreOpen(/*int walls=50*/) {
@@ -175,6 +239,35 @@ public:
                 grid[r][c] = 0;
             }
         }
+    }
+
+    // BFS
+    int ComputePathLength() const {
+        std::queue<std::pair<int, int>> q; // coordinate queue
+        emp::vector<emp::vector<int>> dist(rows, emp::vector<int>(cols, -1));
+
+        dist[start.first][start.second] = 0;
+        q.push({start.first, start.second});
+    
+        while (!q.empty()) {
+            int row {q.front().first};
+            int col {q.front().second};
+            q.pop();
+    
+            for (std::pair<int,int> move : moves) {
+                int nrow {row + move.first};
+                int ncol {col + move.second};
+                if (CanMove({nrow, ncol}) && dist[nrow][ncol] == -1) {
+                    dist[nrow][ncol] = dist[row][col] + 1;
+                    q.push({nrow, ncol});
+                }
+            }
+        }
+        return dist[goal.first][goal.second];  // returns -1 if unreachable
+    }
+
+    emp::vector<emp::vector<bool>> GetGrid() const {
+        return grid;
     }
 
     std::pair<int, int> GetRobotPosition() const {
@@ -253,12 +346,55 @@ public:
         return position == goal;
     }
 
-    void SaveMaze() const {
-
+    // This is different from PrintMaze, which includes formatting
+    void SaveMaze(std::string const & filename) const {
+        std::ofstream ofs(filename);
+        for (emp::vector<bool> const & row : grid) {
+            for (size_t i {0}; i < row.size(); ++i) {
+                ofs << row[i];
+                if (i < row.size() - 1) ofs << " ";
+            }
+            ofs << "\n";
+        }
+        ofs << "START: " << start.first << " " << start.second << "\n";
+        ofs << "GOAL: " << goal.first << " " << goal.second << "\n";
     }
 
-    void LoadMaze() {
-
+    void LoadMaze(std::string const & filename) {
+        std::ifstream ifs(filename);
+        assert(ifs.is_open() && "Failed to open file: " + filename);
+    
+        emp::vector<emp::vector<bool>> maze;
+        std::string line;
+    
+        while (std::getline(ifs, line)) {
+            if (line.rfind("START", 0) == 0) {
+                std::istringstream ss(line);
+                std::string tag;
+                int r, c;
+                ss >> tag >> r >> c;
+                start = {r, c}; // update start position
+            } else if (line.rfind("GOAL", 0) == 0) {
+                std::istringstream ss(line);
+                std::string tag;
+                int r, c;
+                ss >> tag >> r >> c;
+                goal = {r, c}; // update goal position
+            } else {
+                std::istringstream ss(line);
+                emp::vector<bool> row;
+                int value;
+                while (ss >> value) {
+                    row.push_back(static_cast<bool>(value));
+                }
+                if (!row.empty()) maze.push_back(row);
+            }
+        }
+    
+        grid = std::move(maze);
+        rows = grid.size();
+        cols = grid.empty() ? 0 : grid[0].size();
+        ResetRobotPosition();
     }
 
     void PrintMaze(std::ostream & os) const {

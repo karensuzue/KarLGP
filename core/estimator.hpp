@@ -47,7 +47,7 @@ private:
     // ---- NOVELTY SEARCH ----
     // Archive of diverse past behaviors (MazeProg only)
     emp::vector<std::unique_ptr<Program>> archive;
-    double p_min {10.0};
+    double p_min {7.0};
 
     // Secondary fitness (objective-based) statistics
     // Used to keep track of both novelty and objective fitness simultaneously
@@ -116,8 +116,8 @@ public:
     void UpdatePopulationBehaviorSet() {
         pop_behavior_set.clear();
         
-        MazeNoveltyEvaluator & eval {dynamic_cast<MazeNoveltyEvaluator&>(*evaluator)};
-        // MazeEvaluator & eval {dynamic_cast<MazeEvaluator&>(*evaluator)};
+        // MazeNoveltyEvaluator & eval {dynamic_cast<MazeNoveltyEvaluator&>(*evaluator)};
+        MazeEvaluator & eval {dynamic_cast<MazeEvaluator&>(*evaluator)};
 
         for (std::unique_ptr<Program> & p : population) {
             MazeProgram & prog {dynamic_cast<MazeProgram&>(*p)};
@@ -271,27 +271,27 @@ public:
 
         InitPopulation(); 
 
-        // ---- NOVELTY SEARCH ----
-        MazeNoveltyEvaluator & novelty_eval {dynamic_cast<MazeNoveltyEvaluator&>(*evaluator)};
-        MazeEvaluator & fitness_eval {dynamic_cast<MazeEvaluator&>(*second_evaluator)};
+        // // ---- NOVELTY SEARCH ----
+        // MazeNoveltyEvaluator & novelty_eval {dynamic_cast<MazeNoveltyEvaluator&>(*evaluator)};
+        // MazeEvaluator & fitness_eval {dynamic_cast<MazeEvaluator&>(*second_evaluator)};
     
-        // Make sure training cases are consistent across both evaluators
-        fitness_eval.SetTrainingMazes(novelty_eval.GetTrainingMazes());
-        // ------------------------
+        // // Make sure training cases are consistent across both evaluators
+        // fitness_eval.SetTrainingMazes(novelty_eval.GetTrainingMazes());
+        // // ------------------------
 
         UpdatePopulationBehaviorSet();
         all_behaviors.insert(all_behaviors.end(), pop_behavior_set.begin(), pop_behavior_set.end());
 
-        // ---- NOVELTY SEARCH ----
-        novelty_eval.SetOtherBehaviors(pop_behavior_set); // necessary before novelty evaluation
-        // ------------------------
+        // // ---- NOVELTY SEARCH ----
+        // novelty_eval.SetOtherBehaviors(pop_behavior_set); // necessary before novelty evaluation
+        // // ------------------------
 
         EvalPopulation(); // evaluate their fitness (or novelty in the case of NS)
 
-        // ---- NOVELTY SEARCH ----
-        if (second_evaluator) EvalPopulationSecondary();
-        UpdateArchive(); // archive updates always happen after EvalPopulation()
-        // ------------------------
+        // // ---- NOVELTY SEARCH ----
+        // if (second_evaluator) EvalPopulationSecondary();
+        // UpdateArchive(); // archive updates always happen after EvalPopulation()
+        // // ------------------------
 
         auto best_it = std::max_element(population.begin(), population.end(),
             [](std::unique_ptr<Program> const & a, std::unique_ptr<Program> const & b) {
@@ -306,9 +306,9 @@ public:
         // Secondary fitness metrics
         if (second_evaluator) {
             auto best_it2 = std::max_element(population.begin(), population.end(),
-            [](std::unique_ptr<Program> const & a, std::unique_ptr<Program> const & b) {
-                return a->GetSecondFitness() < b->GetSecondFitness();
-            });
+                [](std::unique_ptr<Program> const & a, std::unique_ptr<Program> const & b) {
+                    return a->GetSecondFitness() < b->GetSecondFitness();
+                });
             best_program2 = (*best_it2)->Clone();
             second_best_fitness_history.emplace_back(best_program2->GetSecondFitness());
             second_avg_fitness_history.emplace_back(AvgSecondFitness());
@@ -341,10 +341,10 @@ public:
             if (elitism_count > 0) {
                 // Sort the population based on fitness (highest first)
                 emp::vector<std::unique_ptr<Program>> pop_copy;
-                for (auto& p : population) pop_copy.emplace_back(p->Clone());
+                for (auto & p : population) pop_copy.emplace_back(p->Clone());
             
                 std::sort(pop_copy.begin(), pop_copy.end(),
-                    [](std::unique_ptr<Program>& a, std::unique_ptr<Program>& b) {
+                    [](std::unique_ptr<Program> & a, std::unique_ptr<Program> & b) {
                         return a->GetFitness() > b->GetFitness();
                     }
                 );
@@ -405,35 +405,37 @@ public:
             all_behaviors.insert(all_behaviors.end(), pop_behavior_set.begin(), pop_behavior_set.end());          
             EvalPopulation(); 
             
-            // ---- NOVELTY SEARCH ----
-            EvalPopulationSecondary();
-            size_t addition_count {UpdateArchive()};
+            // // ---- NOVELTY SEARCH ----
+            // EvalPopulationSecondary();
+            // size_t addition_count {UpdateArchive()};
 
-            // Concatenate archive and population behavior set
-            emp::vector<std::pair<double, double>> combined_behaviors {pop_behavior_set};
-            for (std::unique_ptr<Program> & prog_ptr : archive) {
-                MazeProgram& prog = dynamic_cast<MazeProgram&>(*prog_ptr);
-                combined_behaviors.emplace_back(prog.GetBehavior());
-            }
-            novelty_eval.SetOtherBehaviors(combined_behaviors);
+            // if (verbose) std::cout << "DEBUG Archive Size: " << archive.size() << std::endl;
 
-            // Adjust p_min dynamically
-            // If no new additions over 25 generations, decrease p_min
-            // If more than 4 additions within a single generation, increase p_min
-            if (addition_count > 4) p_min *= 1.05;
+            // // Concatenate archive and population behavior set
+            // emp::vector<std::pair<double, double>> combined_behaviors {pop_behavior_set};
+            // for (std::unique_ptr<Program> & prog_ptr : archive) {
+            //     MazeProgram& prog = dynamic_cast<MazeProgram&>(*prog_ptr);
+            //     combined_behaviors.emplace_back(prog.GetBehavior());
+            // }
+            // novelty_eval.SetOtherBehaviors(combined_behaviors);
 
-            if (addition_count == 0) ++no_addition_counter;
-            else no_addition_counter = 0; // reset
+            // // Adjust p_min dynamically
+            // // If no new additions over 25 generations, decrease p_min
+            // // If more than 4 additions within a single generation, increase p_min
+            // if (addition_count > 4) p_min *= 1.05;
 
-            if (no_addition_counter >= 250) {
-                p_min *= 0.95;
-                no_addition_counter = 0;
-            }
+            // if (addition_count == 0) ++no_addition_counter;
+            // else no_addition_counter = 0; // reset
 
-            p_min_history.emplace_back(p_min);
+            // if (no_addition_counter >= 250) {
+            //     p_min *= 0.95;
+            //     no_addition_counter = 0;
+            // }
 
-            if (verbose) os << "P_min: " << p_min << std::endl;
-            // ------------------------
+            // p_min_history.emplace_back(p_min);
+
+            // if (verbose) os << "P_min: " << p_min << std::endl;
+            // // ------------------------
 
             auto best_it = std::max_element(population.begin(), population.end(),
             [](std::unique_ptr<Program> const & a, std::unique_ptr<Program> const & b) {
@@ -477,22 +479,25 @@ public:
             os << "\nEvolution complete (^_^)!\nOverall Best Fitness: " << best_program->GetFitness() << "\n";
         }
 
+        // // ---- COMMENT IF MULTI-RUN ----
         // ExportFitnessHistory(); // Comment out if doing multi-runs
         // if (second_evaluator) ExportSecondHistory();
 
-        // Behavior of program with best "fitness"
-        // In the case of novelty, program with highest novelty score
-        // Keep in mind novelty score is relative, 
-        // and doesn't always equate to program with highest objective fitness
-        // This is more suitable for objective-based search
+        // // Behavior of program with best "fitness"
+        // // In the case of novelty, program with highest novelty score
+        // // Keep in mind novelty score is relative, 
+        // // and doesn't always equate to program with highest objective fitness
+        // // This is more suitable for objective-based search
         // ExportBestProgram(); 
 
-        // ---- NOVELTY SEARCH ----
-        // ExportArchiveBehavior(); 
-        // ------------------------
+        // // -------------------------------
+
+        // // ---- NOVELTY SEARCH ----
+        // ExportArchiveBehaviors(); 
+        // // ------------------------
     }
 
-    void MultiRunEvolve(int run_count=3, std::ostream & os=std::cout) {
+    void MultiRunEvolve(int run_count=10, std::ostream & os=std::cout) {
         verbose = false; // just in case
 
         for (int i {0}; i < run_count; ++i) {
@@ -504,17 +509,53 @@ public:
             // ExportEffectHistory("effect_run_" + std::to_string(i) + ".csv");
             // ExportIntronHistory("intron_run_" + std::to_string(i) + ".csv");
 
+            // ---- FOR TEST SET EVALUATION ----
+            std::ofstream ofs("best_program_" + std::to_string(i) + ".txt");
+            if (ofs.is_open()) {
+                // ofs << best_program->GetFitness() << "\n";
+                ofs << *best_program;
+            }
+
+            // // ---- FOR OBJECTIVE SEARCH ONLY (TO ISOLATE SUFFICIENTLY DIFFICULT MAZES) ----
+            // if (!second_evaluator) { // objective search only
+            //     MazeEvaluator & eval = dynamic_cast<MazeEvaluator&>(*evaluator);
+            //     std::vector<double> maze_dists = eval.EvaluatePerMaze(*best_program);
+                
+            //     // store best program's performance on individual mazes
+            //     std::ofstream dist_ofs("maze_dists_run_" + std::to_string(i) + ".csv"); 
+            //     std::string maze_dir = "hard_mazes_run_" + std::to_string(i);
+            //     std::filesystem::create_directory(maze_dir);
+            
+            //     std::vector<MazeEnvironment> const & mazes = eval.GetInputMazes();
+            
+            //     for (size_t j = 0; j < maze_dists.size(); ++j) {
+            //         dist_ofs << j << "," << maze_dists[j] << "\n";
+            
+            //         if (maze_dists[j] > 20) { // agent does poorly on maze
+            //             std::string filename = maze_dir + "/maze_" + std::to_string(j) + ".txt";
+            //             mazes[j].SaveMaze(filename);
+            //         }
+            //     }
+            // }
+
+
             if (second_evaluator) {
                 ExportSecondHistory("second_fitness_run_" + std::to_string(i) + ".csv");
                 ExportArchiveBehaviors("behavior_archive_" + std::to_string(i) + ".txt");
                 ExportPMinHistory("p_min_history_" + std::to_string(i) + ".csv");
-            }
-            // std::ofstream ofs("best_program_" + std::to_string(i) + ".txt");
-            // if (ofs.is_open()) {
-            //     ofs << best_program->GetFitness() << "\n";
-            //     ofs << *best_program;
-            // }
 
+                std::ofstream ofs("best_program2_" + std::to_string(i) + ".txt");
+                if (ofs.is_open()) {
+                    // ofs << best_program2->GetFitness() << "\n";
+                    ofs << *best_program2;
+                }
+            }
+
+            if (second_evaluator) {
+                os << "Best novelty: " << best_program->GetFitness() << "\n";
+                os << "Best objective: " << best_program2->GetSecondFitness() << "\n";
+            }
+            
             os << "Finished run " << i << "\n";
         }        
     }

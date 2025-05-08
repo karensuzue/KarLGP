@@ -5,6 +5,7 @@
 #include <random>
 #include <cassert>
 #include <iomanip>
+#include <filesystem>
 
 #include "emp/base/vector.hpp"
 
@@ -15,7 +16,7 @@ private:
     size_t max_steps;
     size_t maze_count;
     size_t maze_row, maze_col;
-    mutable std::vector<MazeEnvironment> train_mazes; // training cases
+    mutable emp::vector<MazeEnvironment> train_mazes; // training cases
     std::mt19937 rng;
 
 public:
@@ -23,24 +24,42 @@ public:
         : max_steps(m_steps), maze_count(m_count), maze_row(r), maze_col(c) {
         
         // Generate set of training mazes (half binary, half DFS)
-        for (size_t i {0}; i < maze_count / 2; ++i) {
-            // Seed is taken from indices to vary goal positions
+        // for (size_t i {0}; i < maze_count / 2; ++i) {
+        //     // Seed is taken from indices to vary goal positions
+        //     MazeEnvironment temp(r, c, {1,1}, i);
+        //     temp.GenerateMazeBinary();
+        //     // temp.MakeMazeMoreOpen();
+        //     train_mazes.emplace_back(std::move(temp));
+
+        //     MazeEnvironment temp2(r, c, {1,1}, i);
+        //     temp2.GenerateMazeDFS();
+        //     // temp2.MakeMazeMoreOpen();
+        //     train_mazes.emplace_back(std::move(temp2));
+        // }
+
+        // if (maze_count % 2 != 0) {
+        //     MazeEnvironment temp(r, c, {1,1}, SEED);
+        //     temp.GenerateMazeDFS();
+        //     // temp.MakeMazeMoreOpen();
+        //     train_mazes.emplace_back(std::move(temp));
+        // }
+
+        for (size_t i {0}; i < maze_count; ++i) {
             MazeEnvironment temp(r, c, {1,1}, i);
-            temp.GenerateMazeBinary();
-            temp.MakeMazeMoreOpen();
-            train_mazes.emplace_back(std::move(temp));
-
-            MazeEnvironment temp2(r, c, {1,1}, i);
-            temp2.GenerateMazeDFS();
-            temp2.MakeMazeMoreOpen();
-            train_mazes.emplace_back(std::move(temp2));
-        }
-
-        if (maze_count % 2 != 0) {
-            MazeEnvironment temp(r, c, {1,1}, SEED);
             temp.GenerateMazeDFS();
-            temp.MakeMazeMoreOpen();
-            train_mazes.emplace_back(std::move(temp));
+
+            // ---- PRELIMINARY DECEPTION TEST ----
+            // Compute distance from start to goal
+            double euclidean {temp.GetDistToGoal()};
+            // Compute actual path length
+            int path_len {temp.ComputePathLength()};
+            // If Euclidean distance much smaller than path distance, maze has misdirection
+            bool misdirected = (euclidean / path_len < 0.5); 
+
+            if (misdirected) {
+                // temp.SaveMaze("test_" + std::to_string(i));
+                train_mazes.emplace_back(std::move(temp));
+            }
         }
     }
     
@@ -163,24 +182,57 @@ public:
         return -avg_dist; // Inverted for maximization
     }
 
+
+    // Store all distances, not averaged
+    emp::vector<double> EvaluatePerMaze(Program & p) const {
+        MazeProgram & prog = dynamic_cast<MazeProgram&>(p);
+        emp::vector<double> distances;
     
-    std::vector<MazeEnvironment> const & GetInputMazes() const {
+        for (MazeEnvironment & maze : train_mazes) {
+            maze.ResetRobotPosition();
+            SimulateSingleMaze(prog, maze);
+            distances.push_back(maze.GetDistToGoal());
+            prog.ResetRegisters();
+            maze.ResetRobotPosition();
+        }
+    
+        return distances;
+    }
+
+    
+    emp::vector<MazeEnvironment> const & GetInputMazes() const {
         return train_mazes;
     }
 
-    void SetTrainingMazes(std::vector<MazeEnvironment> const & mazes) {
+    void SetTrainingMazes(emp::vector<MazeEnvironment> const & mazes) {
         train_mazes = mazes;
     }
 
-    void SaveTrainingMazes() const {
-
+    void SaveTrainingMazes(std::string const & dirname="saved_mazes") const {
+        std::filesystem::create_directory(dirname);
+    
+        for (size_t i {0}; i < train_mazes.size(); ++i) {
+            std::string filename = dirname + "/maze_" + std::to_string(i) + ".txt";
+            train_mazes[i].SaveMaze(filename);
+        }
     }
-
-    void LoadTrainingMazes() {
-
+    
+    void LoadTrainingMazes(std::string const & dirname="saved_mazes") {
+        train_mazes.clear();
+    
+        for (size_t i {0};; ++i) {
+            std::string filename = dirname + "/maze_" + std::to_string(i) + ".txt";
+            std::ifstream ifs(filename);
+            if (!ifs.is_open()) break; // stop when no more files
+    
+            MazeEnvironment maze;
+            maze.LoadMaze(filename);
+            train_mazes.push_back(std::move(maze));
+        }
     }
+    
 
-    std::vector<double> GetInputSet() const override {
+    emp::vector<double> GetInputSet() const override {
         throw std::logic_error("MazeEvaluator::GetInputSet() is not supported.");
     }
 

@@ -30,24 +30,30 @@ public:
     MazeNoveltyEvaluator(size_t m_steps, size_t m_count, size_t r, size_t c, size_t k) 
         : max_steps(m_steps), maze_count(m_count), maze_row(r), maze_col(c), k(k) {
         
-        // Generate set of training mazes (half binary, half DFS)
-        for (size_t i {0}; i < maze_count / 2; ++i) {
-            // Seed is taken from indices to vary goal positions
+        // // Generate set of training mazes (half binary, half DFS)
+        // for (size_t i {0}; i < maze_count / 2; ++i) {
+        //     // Seed is taken from indices to vary goal positions
+        //     MazeEnvironment temp(r, c, {1,1}, i);
+        //     temp.GenerateMazeBinary();
+        //     temp.MakeMazeMoreOpen();
+        //     train_mazes.emplace_back(std::move(temp));
+
+        //     MazeEnvironment temp2(r, c, {1,1}, i);
+        //     temp2.GenerateMazeDFS();
+        //     temp2.MakeMazeMoreOpen();
+        //     train_mazes.emplace_back(std::move(temp2));
+        // }
+
+        // if (maze_count % 2 != 0) {
+        //     MazeEnvironment temp(r, c, {1,1}, SEED);
+        //     temp.GenerateMazeDFS();
+        //     temp.MakeMazeMoreOpen();
+        //     train_mazes.emplace_back(std::move(temp));
+        // }
+
+        for (size_t i {0}; i < maze_count; ++i) {
             MazeEnvironment temp(r, c, {1,1}, i);
-            temp.GenerateMazeBinary();
-            temp.MakeMazeMoreOpen();
-            train_mazes.emplace_back(std::move(temp));
-
-            MazeEnvironment temp2(r, c, {1,1}, i);
-            temp2.GenerateMazeDFS();
-            temp2.MakeMazeMoreOpen();
-            train_mazes.emplace_back(std::move(temp2));
-        }
-
-        if (maze_count % 2 != 0) {
-            MazeEnvironment temp(r, c, {1,1}, SEED);
             temp.GenerateMazeDFS();
-            temp.MakeMazeMoreOpen();
             train_mazes.emplace_back(std::move(temp));
         }
     }

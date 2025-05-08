@@ -4,6 +4,7 @@
 #include <cassert>
 #include <memory>
 #include <optional>
+#include <fstream>
 
 #include "emp/base/vector.hpp"
 
@@ -247,6 +248,77 @@ public:
             }
         }
     }
+
+
+    void LoadMazeProgram(std::string const & filename) {
+        std::ifstream ifs(filename);
+        assert(ifs.is_open());
+        
+        std::vector<Instruction> instrs;
+        std::string line;
+        while (std::getline(ifs, line)) {
+            if (line.empty()) continue;
+
+            std::stringstream ss(line);
+            Instruction instr;
+            
+            // Parse (binary): r[i] = OP (r[j] r[k])
+            // Parse (ternary): r[i] = OP (r[j], r[t], R[k]/constant)
+            std::string token;
+            std::getline(ss, token, '['); // "r"
+            std::getline(ss, token, ']'); 
+            // std::cout << "i = " << token << std::endl;
+            instr.Ri = std::stoi(token);
+    
+            std::getline(ss, token, '('); // " = OP"
+            std::istringstream token_stream(token);
+            std::string equals, op_name;
+            token_stream >> equals >> op_name;
+            // std::cout << "operator name = " << op_name << std::endl;
+    
+            instr.op_type = GLOBAL_OPERATORS.IsTernaryOperator(op_name) ? 1 : 0;
+            // std::cout << "type of operator = " << instr.op_type << std::endl;
+            instr.op = instr.op_type ? GLOBAL_OPERATORS.GetTernaryOperatorID(op_name)
+                                     : GLOBAL_OPERATORS.GetOperatorID(op_name);
+            // std::cout << "operator id = " << instr.op << std::endl;
+    
+            std::getline(ss, token, '[');
+            std::getline(ss, token, ']'); 
+            // std::cout << "j = " << token << std::endl;
+            instr.Rj = std::stoi(token);
+    
+            if (instr.op_type == 1) {
+                std::getline(ss, token, '[');
+                std::getline(ss, token, ']'); 
+                // std::cout << "t = " << token << std::endl;
+                instr.Rt = std::stoi(token);
+            }
+    
+            // Parse r[k] or constant
+            std::getline(ss, token, ')');
+            std::cout << token << std::endl;
+            std::stringstream final(token);
+            final >> token >> token;
+            std::cout << token << std::endl;
+
+            if (token.find("r[") != std::string::npos) {
+                size_t start = token.find('[') + 1;
+                size_t end = token.find(']');
+                instr.Rk_type = RkType::REGISTER;
+                std::cout << "k = " << token.substr(start, end-start) << std::endl;
+                instr.Rk = std::stoul(token.substr(start, end - start));
+            } else {
+                instr.Rk_type = RkType::CONSTANT;
+                instr.Rk = std::stod(token);
+            }
+            instrs.emplace_back(std::move(instr));
+        }
+    
+        SetInstructions(instrs);
+        // SetFitness(fitness_val);
+    }
+
+    
 
     // UNIMPLEMENTED
     double StructuralIntronProp() const override { return 0; }

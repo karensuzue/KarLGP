@@ -116,11 +116,35 @@ public:
         return operators[id].first;
     }
 
+    size_t GetOperatorID(std::string const & name) const {
+        assert(IsOperator(name) && "This operator either doesn't exist or is not unary/binary.");
+        for (size_t i {0}; i < operators.size(); ++i) {
+            if (operators[i].first == name) {
+                return i;
+            }
+        }
+    }
+
+    bool IsOperator(std::string const & name) const {
+        for (auto const & pair : operators) {
+            if (pair.first == name) return true;
+        }
+        return false;
+    }
+
+
 
     // TERNARY-ONLY FUNCTIONS
 
     bool IsSetTenary() const {
         return ternary;
+    }
+
+    bool IsTernaryOperator(std::string const & name) const {
+        for (auto const & pair : ternary_operators) {
+            if (pair.first == name) return true;
+        }
+        return false;
     }
 
     ternary_operator_func GetTernaryOperator(size_t id) const {
@@ -132,6 +156,16 @@ public:
         assert(id < ternary_operators.size() && "Invalid ternary operator ID.");
         return ternary_operators[id].first;
     }
+
+    size_t GetTernaryOperatorID(std::string const & name) const {
+        assert(IsTernaryOperator(name) && "This operator either doesn't exist or is not ternary.");
+        for (size_t i {0}; i < ternary_operators.size(); ++i) {
+            if (ternary_operators[i].first == name) {
+                return i;
+            }
+        }
+    }
+    
 
     friend std::ostream & operator<<(std::ostream & os, Operators const & operator_set) {
         for (auto & op : operator_set.operators) {

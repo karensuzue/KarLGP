@@ -1,0 +1,699 @@
+---
+title: "FinalProj"
+author: "Karen"
+date: "2025-04-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.path = "plots/")
+```
+
+# Load
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+# Data Wrangling (Normal)
+```{r}
+# OBJECTIVE - FITNESS
+
+f_files <- list.files(path="data/finalproj/objective/", pattern="^fitness_run_\\d+\\.csv")
+
+o_f_data <- data.frame()
+
+for (file in f_files) {
+  data <- read.csv(file.path("data/finalproj/objective/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  
+  # FORCE NUMERIC
+  data$BestFitness <- as.numeric(data$BestFitness)
+  data$AvgFitness <- as.numeric(data$AvgFitness)
+  data$MedianFitness <- as.numeric(data$MedianFitness)
+
+  o_f_data <- rbind(o_f_data, data) # bind rows
+}
+
+# AVERAGE FITNESS DATA OVER RUNS
+average_o_f_data <- summarize(
+  group_by(o_f_data, Generation),
+  AvgBestFitness = mean(BestFitness),
+  AvgAvgFitness = mean(AvgFitness),
+  AvgMedianFitness = mean(MedianFitness)
+)
+
+long_average_o_f_data <- pivot_longer(
+  average_o_f_data,
+  cols = c(AvgBestFitness, AvgAvgFitness, AvgMedianFitness),
+  names_to = "Metric",
+  values_to = "Fitness"
+)
+```
+
+
+```{r}
+# OBJECTIVE - ALL BEHAVIORS
+a_files <- list.files(path="data/finalproj/objective/", pattern="^all_behaviors\\d+\\.csv")
+
+o_a_data <- data.frame()
+
+for (file in a_files) {
+  data <- read.csv(file.path("data/finalproj/objective/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  o_a_data <- rbind(o_a_data, data) # bind rows
+}
+```
+
+
+```{r}
+# NOVELTY - "FITNESS" (aka novelty)
+f_files <- list.files(path="data/finalproj/novelty/", pattern="^fitness_run_\\d+\\.csv")
+
+n_f_data <- data.frame()
+
+for (file in f_files) {
+  data <- read.csv(file.path("data/finalproj/novelty/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  
+  # FORCE NUMERIC
+  data$BestFitness <- as.numeric(data$BestFitness)
+  data$AvgFitness <- as.numeric(data$AvgFitness)
+  data$MedianFitness <- as.numeric(data$MedianFitness)
+
+  n_f_data <- rbind(n_f_data, data) # bind rows
+}
+
+# AVERAGE FITNESS DATA OVER RUNS
+average_n_f_data <- summarize(
+  group_by(n_f_data, Generation),
+  AvgBestFitness = mean(BestFitness),
+  AvgAvgFitness = mean(AvgFitness),
+  AvgMedianFitness = mean(MedianFitness)
+)
+
+long_average_n_f_data <- pivot_longer(
+  average_n_f_data,
+  cols = c(AvgBestFitness, AvgAvgFitness, AvgMedianFitness),
+  names_to = "Metric",
+  values_to = "Fitness"
+)
+```
+
+```{r}
+# NOVELTY - "SECOND FITNESS" (aka objective)
+f2_files <- list.files(path="data/finalproj/novelty/", pattern="^second_fitness_run_\\d+\\.csv")
+
+n_f2_data <- data.frame()
+
+for (file in f2_files) {
+  data <- read.csv(file.path("data/finalproj/novelty/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  
+  # FORCE NUMERIC
+  data$BestFitness <- as.numeric(data$BestFitness)
+  data$AvgFitness <- as.numeric(data$AvgFitness)
+  data$MedianFitness <- as.numeric(data$MedianFitness)
+
+  n_f2_data <- rbind(n_f2_data, data) # bind rows
+}
+
+# AVERAGE FITNESS DATA OVER RUNS
+average_n_f2_data <- summarize(
+  group_by(n_f2_data, Generation),
+  AvgBestFitness = mean(BestFitness),
+  AvgAvgFitness = mean(AvgFitness),
+  AvgMedianFitness = mean(MedianFitness)
+)
+
+long_average_n_f2_data <- pivot_longer(
+  average_n_f2_data,
+  cols = c(AvgBestFitness, AvgAvgFitness, AvgMedianFitness),
+  names_to = "Metric",
+  values_to = "Fitness"
+)
+```
+
+```{r}
+# NOVELTY - p_min HISTORY (novelty archive threshold - dynamically adjusted)
+p_files <- list.files(path="data/finalproj/novelty/", pattern="^p_min_history_\\d+\\.csv")
+
+n_p_data <- data.frame()
+
+for (file in p_files) {
+  data <- read.csv(file.path("data/finalproj/novelty/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  
+  # FORCE NUMERIC
+  data$P_min <- as.numeric(data$P_min)
+
+  n_p_data <- rbind(n_p_data, data) # bind rows
+}
+
+# AVERAGE FITNESS DATA OVER RUNS
+average_n_p_data <- summarize(
+  group_by(n_p_data, Generation),
+  AvgP_min = mean(P_min)
+)
+```
+
+```{r}
+# NOVELTY - ALL BEHAVIORS
+a_files <- list.files(path="data/finalproj/novelty/", pattern="^all_behaviors\\d+\\.csv")
+
+n_a_data <- data.frame()
+
+for (file in a_files) {
+  data <- read.csv(file.path("data/finalproj/novelty/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  n_a_data <- rbind(n_a_data, data) # bind rows
+}
+```
+
+
+
+# Plots (Normal)
+
+```{r fig.path="plots/"}
+ggplot(o_f_data, aes(x=Generation, y=BestFitness, color=factor(run))) +
+  geom_line(alpha=0.7) +
+  labs(
+    title="Highest Fitness Over Generations (Objective)",
+    x="Generation",
+    y="Fitness",
+    color="Run"
+  ) +
+  theme_minimal()
+
+ggplot(long_average_o_f_data, aes(x=Generation, y=Fitness, color=Metric)) +
+  geom_line() +
+    scale_color_manual(
+    name = "Metric",  # Legend title
+    values = c(
+      "AvgAvgFitness" = "red",
+      "AvgBestFitness" = "green",
+      "AvgMedianFitness" = "blue"
+    ),
+    labels = c(
+      "AvgAvgFitness" = "Average Fitness",
+      "AvgBestFitness" = "Highest Fitness",
+      "AvgMedianFitness" = "Median Fitness"
+    )) + 
+  labs(title = "Highest, Average, and Median Fitness over Generations (Objective)",
+       x = "Generation",
+       y = "Fitness",
+       color = "Metric") +
+  theme_minimal()
+
+ggplot(n_f2_data, aes(x=Generation, y=BestFitness, color=factor(run))) +
+  geom_line(alpha=0.7) +
+  labs(
+    title="Highest Fitness Over Generations (Novelty)",
+    x="Generation",
+    y="Fitness",
+    color="Run"
+  ) +
+  theme_minimal()
+
+ggplot(long_average_n_f2_data, aes(x=Generation, y=Fitness, color=Metric)) +
+  geom_line() +
+    scale_color_manual(
+    name = "Metric",  # Legend title
+    values = c(
+      "AvgAvgFitness" = "red",
+      "AvgBestFitness" = "green",
+      "AvgMedianFitness" = "blue"
+    ),
+    labels = c(
+      "AvgAvgFitness" = "Average Fitness",
+      "AvgBestFitness" = "Highest Fitness",
+      "AvgMedianFitness" = "Median Fitness"
+    )) + 
+  labs(title = "Highest, Average, and Median Fitness over Generations (Novelty)",
+       x = "Generation",
+       y = "Fitness",
+       color = "Metric") +
+  theme_minimal()
+
+ggplot(long_average_n_f_data, aes(x=Generation, y=Fitness, color =Metric)) +
+  geom_line() +
+    scale_color_manual(
+    name = "Metric",  # Legend title
+    values = c(
+      "AvgAvgFitness" = "red",
+      "AvgBestFitness" = "green",
+      "AvgMedianFitness" = "blue"
+    ),
+    labels = c(
+      "AvgAvgFitness" = "Average Novelty",
+      "AvgBestFitness" = "Highest Novelty",
+      "AvgMedianFitness" = "Median Novelty"
+    )) + 
+  labs(title = "Highest, Average, and Median Novelty over Generations (Novelty)",
+       x = "Generation",
+       y = "Novelty",
+       color = "Metric") +
+  theme_minimal()
+
+ggplot(n_p_data, aes(x=Generation, y=P_min, color=factor(run))) +
+  geom_line() + 
+  labs(title="P_min Threshold over Generations",
+       x="Generation",
+       y="P_min",
+       color="Run")+
+theme_minimal()
+
+ggplot(o_a_data, aes(x=Col, y=Row)) +
+  geom_point() +
+  labs(title="Behavior (Objective)",
+       x="Column",
+       y="Row") +
+  theme_minimal()
+
+ggplot(n_a_data, aes(x=Col, y=Row)) +
+  geom_point() +
+  labs(title="Behavior (Novelty)",
+       x="Column",
+       y="Row") + 
+  theme_minimal()
+
+
+```
+
+
+# Data Wrangling (Hard)
+```{r}
+# OBJECTIVE - FITNESS
+
+f_files <- list.files(path="data/finalproj/objective-hard/", pattern="^fitness_run_\\d+\\.csv")
+
+oh_f_data <- data.frame()
+
+for (file in f_files) {
+  data <- read.csv(file.path("data/finalproj/objective-hard/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  
+  # FORCE NUMERIC
+  data$BestFitness <- as.numeric(data$BestFitness)
+  data$AvgFitness <- as.numeric(data$AvgFitness)
+  data$MedianFitness <- as.numeric(data$MedianFitness)
+
+  oh_f_data <- rbind(oh_f_data, data) # bind rows
+}
+
+# AVERAGE FITNESS DATA OVER RUNS
+average_oh_f_data <- summarize(
+  group_by(oh_f_data, Generation),
+  AvgBestFitness = mean(BestFitness),
+  AvgAvgFitness = mean(AvgFitness),
+  AvgMedianFitness = mean(MedianFitness)
+)
+
+long_average_oh_f_data <- pivot_longer(
+  average_oh_f_data,
+  cols = c(AvgBestFitness, AvgAvgFitness, AvgMedianFitness),
+  names_to = "Metric",
+  values_to = "Fitness"
+)
+```
+
+
+```{r}
+# OBJECTIVE - ALL BEHAVIORS
+a_files <- list.files(path="data/finalproj/objective-hard/", pattern="^all_behaviors\\d+\\.csv")
+
+oh_a_data <- data.frame()
+
+for (file in a_files) {
+  data <- read.csv(file.path("data/finalproj/objective-hard/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  oh_a_data <- rbind(oh_a_data, data) # bind rows
+}
+```
+
+
+```{r}
+# NOVELTY - "FITNESS" (aka novelty)
+f_files <- list.files(path="data/finalproj/novelty-hard/", pattern="^fitness_run_\\d+\\.csv")
+
+nh_f_data <- data.frame()
+
+for (file in f_files) {
+  data <- read.csv(file.path("data/finalproj/novelty-hard/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  
+  # FORCE NUMERIC
+  data$BestFitness <- as.numeric(data$BestFitness)
+  data$AvgFitness <- as.numeric(data$AvgFitness)
+  data$MedianFitness <- as.numeric(data$MedianFitness)
+
+  nh_f_data <- rbind(nh_f_data, data) # bind rows
+}
+
+# AVERAGE FITNESS DATA OVER RUNS
+average_nh_f_data <- summarize(
+  group_by(nh_f_data, Generation),
+  AvgBestFitness = mean(BestFitness),
+  AvgAvgFitness = mean(AvgFitness),
+  AvgMedianFitness = mean(MedianFitness)
+)
+
+long_average_nh_f_data <- pivot_longer(
+  average_nh_f_data,
+  cols = c(AvgBestFitness, AvgAvgFitness, AvgMedianFitness),
+  names_to = "Metric",
+  values_to = "Fitness"
+)
+```
+
+```{r}
+# NOVELTY - "SECOND FITNESS" (aka objective)
+f2_files <- list.files(path="data/finalproj/novelty-hard/", pattern="^second_fitness_run_\\d+\\.csv")
+
+nh_f2_data <- data.frame()
+
+for (file in f2_files) {
+  data <- read.csv(file.path("data/finalproj/novelty-hard/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  
+  # FORCE NUMERIC
+  data$BestFitness <- as.numeric(data$BestFitness)
+  data$AvgFitness <- as.numeric(data$AvgFitness)
+  data$MedianFitness <- as.numeric(data$MedianFitness)
+
+  nh_f2_data <- rbind(nh_f2_data, data) # bind rows
+}
+
+# AVERAGE FITNESS DATA OVER RUNS
+average_nh_f2_data <- summarize(
+  group_by(nh_f2_data, Generation),
+  AvgBestFitness = mean(BestFitness),
+  AvgAvgFitness = mean(AvgFitness),
+  AvgMedianFitness = mean(MedianFitness)
+)
+
+long_average_nh_f2_data <- pivot_longer(
+  average_nh_f2_data,
+  cols = c(AvgBestFitness, AvgAvgFitness, AvgMedianFitness),
+  names_to = "Metric",
+  values_to = "Fitness"
+)
+```
+
+```{r}
+# NOVELTY - p_min HISTORY (novelty archive threshold - dynamically adjusted)
+p_files <- list.files(path="data/finalproj/novelty-hard/", pattern="^p_min_history_\\d+\\.csv")
+
+nh_p_data <- data.frame()
+
+for (file in p_files) {
+  data <- read.csv(file.path("data/finalproj/novelty-hard/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  
+  # FORCE NUMERIC
+  data$P_min <- as.numeric(data$P_min)
+
+  nh_p_data <- rbind(nh_p_data, data) # bind rows
+}
+
+# AVERAGE FITNESS DATA OVER RUNS
+average_nh_p_data <- summarize(
+  group_by(nh_p_data, Generation),
+  AvgP_min = mean(P_min)
+)
+```
+
+```{r}
+# NOVELTY - ALL BEHAVIORS
+a_files <- list.files(path="data/finalproj/novelty-hard/", pattern="^all_behaviors\\d+\\.csv")
+
+nh_a_data <- data.frame()
+
+for (file in a_files) {
+  data <- read.csv(file.path("data/finalproj/novelty-hard/", file))
+  run_number <- as.integer(stringr::str_extract(file, "\\d+"))
+  data$run = run_number
+  nh_a_data <- rbind(nh_a_data, data) # bind rows
+}
+```
+
+
+
+# Plots (Hard)
+```{r}
+ggplot(oh_f_data, aes(x=Generation, y=BestFitness, color=factor(run))) +
+  geom_line(alpha=0.7) +
+  labs(
+    title="Highest Fitness Over Generations (Objective - Hard)",
+    x="Generation",
+    y="Fitness",
+    color="Run"
+  ) +
+  theme_minimal()
+
+ggplot(long_average_oh_f_data, aes(x=Generation, y=Fitness, color=Metric)) +
+  geom_line() +
+   scale_color_manual(
+    name = "Metric",  # Legend title
+    values = c(
+      "AvgAvgFitness" = "red",
+      "AvgBestFitness" = "green",
+      "AvgMedianFitness" = "blue"
+    ),
+    labels = c(
+      "AvgAvgFitness" = "Average Fitness",
+      "AvgBestFitness" = "Highest Fitness",
+      "AvgMedianFitness" = "Median Fitness"
+    )) + 
+  labs(title = "Highest, Average, and Median Fitness over Generations (Objective - Hard)",
+       x = "Generation",
+       y = "Fitness",
+       color = "Metric") +
+  theme_minimal()
+
+ggplot(nh_f2_data, aes(x=Generation, y=BestFitness, color=factor(run))) +
+  geom_line(alpha=0.7) +
+  labs(
+    title="Highest Fitness Over Generations (Novelty - Hard)",
+    x="Generation",
+    y="Fitness",
+    color="Run"
+  ) +
+  theme_minimal()
+
+ggplot(long_average_nh_f2_data, aes(x=Generation, y=Fitness, color=Metric)) +
+  geom_line() +
+   scale_color_manual(
+    name = "Metric",  # Legend title
+    values = c(
+      "AvgAvgFitness" = "red",
+      "AvgBestFitness" = "green",
+      "AvgMedianFitness" = "blue"
+    ),
+    labels = c(
+      "AvgAvgFitness" = "Average Fitness",
+      "AvgBestFitness" = "Highest Fitness",
+      "AvgMedianFitness" = "Median Fitness"
+    )) + 
+  labs(title = "Highest, Average, and Median Fitness over Generations (Novelty - Hard)",
+       x = "Generation",
+       y = "Fitness",
+       color = "Metric") +
+  theme_minimal()
+
+ggplot(long_average_nh_f_data, aes(x=Generation, y=Fitness, color =Metric)) +
+  geom_line() +
+   scale_color_manual(
+    name = "Metric",  # Legend title
+    values = c(
+      "AvgAvgFitness" = "red",
+      "AvgBestFitness" = "green",
+      "AvgMedianFitness" = "blue"
+    ),
+    labels = c(
+      "AvgAvgFitness" = "Average Novelty",
+      "AvgBestFitness" = "Highest Novelty",
+      "AvgMedianFitness" = "Median Novelty"
+    )) + 
+  labs(title = "Highest, Average, and Median Novelty over Generations (Novelty - Hard)",
+       x = "Generation",
+       y = "Novelty",
+       color = "Metric") +
+  theme_minimal()
+
+ggplot(nh_p_data, aes(x=Generation, y=P_min, color=factor(run))) +
+  geom_line() + 
+  labs(title="P_min Threshold over Generations",
+       x="Generation",
+       y="P_min")+
+theme_minimal()
+
+ggplot(oh_a_data, aes(x=Col, y=Row)) +
+  geom_point() +
+  labs(title="Behavior (Objective - Hard)",
+       x="Column",
+       y="Row") +
+  theme_minimal()
+
+ggplot(nh_a_data, aes(x=Col, y=Row)) +
+  geom_point() +
+  labs(title="Behavior (Novelty - Hard)",
+       x="Column",
+       y="Row") + 
+  theme_minimal()
+
+
+```
+
+
+# Data Wrangling (Test Set Evaluation)
+```{r}
+test_novelty <- read.csv("data/finalproj/test_novelty.csv",h=T)
+test_novelty_hard <- read.csv("data/finalproj/test_novelty_hard.csv",h=T)
+test_objective <- read.csv("data/finalproj/test_objective.csv",h=T)
+test_objective_hard <- read.csv("data/finalproj/test_objective_hard.csv",h=T)
+
+test_novelty$Group <- "Novelty"
+test_novelty_hard$Group <- "Novelty-Hard"
+test_objective$Group <- "Objective"
+test_objective_hard$Group <- "Objective-Hard"
+
+combined_test <- bind_rows(
+  test_novelty,
+  test_novelty_hard,
+  test_objective,
+  test_objective_hard
+)
+
+long_test <- pivot_longer(
+  combined_test,
+  cols = c(DFSDist, BinDist, PrimDist),
+  names_to = "Maze",
+  values_to = "Distance"
+)
+```
+
+# Plots (Test Set Evaluation)
+```{r}
+# Each group has 10 runs, in each of those runs we record the best performer aka 10 best programs/group
+
+
+# For each group, we take the highest performing (fitness) programs from the final populations of each run, simulate them on three test mazes (DFS, Binary, Prim's).
+
+
+ggplot(long_test, aes(x=Maze, y=Distance, fill=Group)) +
+  geom_boxplot(position=position_dodge(0.8), width=0.6, outlier.size=1) +
+  labs(title = "Distance to Goal by Maze and Group",
+       x = "Maze",
+       y = "Distance to Goal") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1")
+
+```
+
+# Statistical Analyses
+```{r}
+# Wilcoxon signed rank test for the HARD results 
+# because they're trained on the same training set, and all the run parameters are constant, so paired data i think
+# we compare final population's best values from each run for all groups
+
+# for NORMAL results, use Mann Whitney U/wilcoxon rank sum test for unpaired (training set randomized separately)
+# my stats is bad
+
+
+# First isolate the final pop best values 
+objective_final <- filter(o_f_data, Generation == 1000)
+novelty_final <- filter(n_f2_data, Generation == 1000)
+objective_hard_final <- filter(oh_f_data, Generation == 1000)
+novelty_hard_final <- filter(nh_f2_data, Generation == 1000)
+
+objective_final$Group <- "Objective"
+novelty_final$Group <- "Novelty"
+objective_hard_final$Group <- "Objective-Hard"
+novelty_hard_final$Group <- "Novelty-Hard"
+
+all_final <- bind_rows(objective_final, novelty_final, objective_hard_final, novelty_hard_final)
+
+ggplot(all_final, aes(x=Group, y=BestFitness, fill=Group)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.1, alpha = 0.6) +
+  labs(title = "Highest Fitness at Final Generation by Group",
+       y = "Fitness") +
+  theme_minimal()
+
+# HARD
+# wilcox signed rank test
+# significant difference between the two paired groups in best fitness 
+# (IGNORE ) wilcox.test(objective_hard_final$BestFitness, novelty_hard_final$BestFitness, paired = TRUE)
+
+# NORMAL AND HARD (across all groups)
+# pairwise Wilcoxon rank sum tests, function performs pairwise tests for all pairs of groups in data
+# adjusts p-values to account for multiple comparisons
+# all pairwise differences are statistically significant
+# All pairwise group comparisons show statistically significant differences in best (final generation) fitness across runs after adjusting for multiple comparisons using the Holm method.
+pairwise.wilcox.test(all_final$BestFitness, all_final$Group, p.adjust.method = "holm")
+
+
+# TEST
+# group differences per/within each maze? 
+# pairwise group by group comparisons wilc rank sum again
+# compare across maze types
+
+# GROUP DIFFERENCES WITHIN BINARY MAZE
+bin_test <- subset(long_test, Maze=="BinDist")
+# Kruskal-Wallis test to detect any group-level differences on BinDist maze
+kruskal.test(Distance ~ Group, data = bin_test) # NOT SIGNIFICANT (p-value 0.1063)
+
+# if significant, pairwise Wilcoxon rank-sum tests (Holm-corrected)
+# pairwise.wilcox.test(bin_test$Distance, bin_test$Group, p.adjust.method = "holm")
+
+# GROUP DIFFERENCES WITHIN DFS MAZE
+dfs_test <- subset(long_test, Maze=="DFSDist")
+# Kruskal-Wallis test to detect any group-level differences on DFSDist maze
+kruskal.test(Distance ~ Group, data = dfs_test) # SIGNIFICANT (p-value 0.002438)
+
+# if significant, pairwise Wilcoxon rank-sum tests (Holm-corrected)
+pairwise.wilcox.test(dfs_test$Distance, dfs_test$Group, p.adjust.method = "holm")
+
+# GROUP DIFFERENCES WITHIN PRIM MAZE
+prim_test <- subset(long_test, Maze=="PrimDist")
+# Kruskal-Wallis test to detect any group-level differences on DFSDist maze
+kruskal.test(Distance ~ Group, data = prim_test) # NOT SIGNIFICANT (p-value 0.2425)
+
+# if significant, pairwise Wilcoxon rank-sum tests (Holm-corrected)
+# pairwise.wilcox.test(prim_test$Distance, prim_test$Group, p.adjust.method = "holm")
+
+
+
+# DIFFERENCES BETWEEN GROUPS ACROSS MAZES
+# pairwise.wilcox.test(long_test$Distance, long_test$Group, p.adjust.method = "holm") # novelty and novelty hard are statistically different
+# this one is actually wrong, scroll down
+
+```
+
+
+```{r}
+long_test$Program = rep(1:40, each=3) # change program id, makes no sense for them to have repeating numbers from 0 to 9
+# 10 programs * 4 groups. repeat for 3 mazes
+
+agg_long_test <- long_test %>% group_by(Program, Group) %>% summarize(MeanDist=mean(Distance), .groups = 'drop')
+
+kruskal.test(MeanDist ~ Group, data = agg_long_test)
+
+pairwise.wilcox.test(agg_long_test$MeanDist, agg_long_test$Group, p.adjust.method = "holm")
+
+
+```
